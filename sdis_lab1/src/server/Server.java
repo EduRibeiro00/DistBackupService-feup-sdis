@@ -10,7 +10,6 @@ public class Server {
     private static HashMap<String,String> addressTable; // dns table with pairs <name, ip_address>
     private static int port; // port number
     private static DatagramSocket socket; // socket that will be used for communication
-    private static int TIMEOUT = 10000; // socket operation timeout (10 seconds)
 
     /**
      * Main method
@@ -73,6 +72,8 @@ public class Server {
             System.out.println("Server: " + requestString.trim());
             String replyString = generateReply(requestString.trim());
             sendReply(replyString, packet);
+            byte[] newBuf = new byte[512];
+            packet.setData(newBuf);
         }
     }
 
@@ -124,7 +125,7 @@ public class Server {
      */
     private static String processLookupAndReply(String dnsName) {
         String ipAddress = addressTable.get(dnsName);
-        return ipAddress == null ? "No entry" : (dnsName + ipAddress);
+        return ipAddress == null ? "No entry" : (dnsName + " -> " + ipAddress);
     }
 
 
@@ -135,7 +136,6 @@ public class Server {
      */
     private static void sendReply(String replyString, DatagramPacket packet) throws IOException {
         packet.setData(replyString.getBytes());
-        socket.setSoTimeout(TIMEOUT);
         socket.send(packet);
     }
 }
