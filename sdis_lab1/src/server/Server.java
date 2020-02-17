@@ -124,12 +124,14 @@ public class Server {
         return ipAddress == null ? "No entry" : (dnsName + ipAddress);
     }
 
+
     /**
      * Method that sends the reply to the client
      * @param replyString - reply string to be sent to the client
      * @param packet - packet to send to the client
      */
-    private static void sendReply(String replyString, DatagramPacket packet) throws IOException{
+    private static void sendReply(String replyString, DatagramPacket packet) throws IOException {
+        packet.setData(replyString.getBytes());
         socket.send(packet);
     }
 }
