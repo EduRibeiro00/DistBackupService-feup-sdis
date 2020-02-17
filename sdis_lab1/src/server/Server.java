@@ -10,6 +10,7 @@ public class Server {
     private static HashMap<String,String> addressTable; // dns table with pairs <name, ip_address>
     private static int port; // port number
     private static DatagramSocket socket; // socket that will be used for communication
+    private static int TIMEOUT = 10000; // socket operation timeout (10 seconds)
 
     /**
      * Main method
@@ -17,14 +18,14 @@ public class Server {
      */
     public static void main(String[] args) {
         // check arguments
-        if (args.length < 2) {
+        if (args.length < 1) {
             System.out.println("Invalid number of arguments");
             System.exit(1);
         }
 
         // open port
         try {
-            port = Integer.parseInt(args[1]);
+            port = Integer.parseInt(args[0]);
         }
         catch (NumberFormatException e) {
             System.out.println("Port specified is invalid");
@@ -48,9 +49,11 @@ public class Server {
             processRequests();
         }
         catch (IOException e) {
-            System.out.println("Error in communication with client");
+            System.out.println("Error in communication with client (possible timeout)");
             System.exit(3);
         }
+
+        socket.close();
     }
 
 
@@ -132,6 +135,7 @@ public class Server {
      */
     private static void sendReply(String replyString, DatagramPacket packet) throws IOException {
         packet.setData(replyString.getBytes());
+        socket.setSoTimeout(TIMEOUT);
         socket.send(packet);
     }
 }
