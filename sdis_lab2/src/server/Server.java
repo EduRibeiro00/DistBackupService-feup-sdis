@@ -75,8 +75,8 @@ public class Server {
     private static ScheduledExecutorService spawnBroadcastExecutor() {
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);
 
-        executor.scheduleAtFixedRate(new Callable() {
-           public Object call() throws Exception {
+        executor.scheduleAtFixedRate(new Runnable() {
+           public void run() {
                 byte[] content = Integer.toString(port).getBytes();
                 DatagramPacket mcast_packet = new DatagramPacket(content, content.length, InetAddress.getByName(mcast_addr), mcast_port);
 
