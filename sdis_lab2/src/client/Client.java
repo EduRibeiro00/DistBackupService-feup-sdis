@@ -7,8 +7,10 @@ import java.net.*;
  */
 public class Client {
     private static int TIMEOUT = 10000; // socket operation timeout (10 seconds)
-    private static String host; // host address
-    private static int port; // port number
+    private static String mcast_addr; // multicast address
+    private static int mcast_port; // multicast port number
+    private static String lookup_addr; // lookup server's address
+    private static int lookup_port; // lookup server's port number
     private static DatagramSocket socket; // socket that will be used for communication
 
     /**
@@ -24,10 +26,9 @@ public class Client {
             System.exit(1);
         }
 
-
         // set variables
-        host = args[0];
-        port = Integer.parseInt(args[1]);
+        mcast_addr = args[0];
+        mcast_port = Integer.parseInt(args[1]);
         String oper = args[2];
         String dnsName = args[3];
 
@@ -49,6 +50,12 @@ public class Client {
             System.exit(2);
         }
 
+        // get lookup server's information
+        DatagramPacket mcast_pckt = getLookupServer();
+        lookup_addr = mcast_pckt.getAddress();
+        lookup_port = Integer.parseInt(mcast_pckt.getData());
+
+
         // receive and print response
         String response = receiveResponse(socket);
         System.out.println(response);
@@ -65,8 +72,8 @@ public class Client {
     private static void sendRegisterRequest(String dnsName, String ipAddress, DatagramSocket socket) throws UnknownHostException {
         String request = "register " + dnsName + " " + ipAddress;
         byte[] buffer = request.getBytes();
-        InetAddress address = InetAddress.getByName(host);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+        InetAddress address = InetAddress.getByName(mcast_addr);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, mcast_port);
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -83,8 +90,8 @@ public class Client {
     private static void sendLookupRequest(String dnsName, DatagramSocket socket) throws UnknownHostException {
         String request = "lookup " + dnsName;
         byte[] buffer = request.getBytes();
-        InetAddress address = InetAddress.getByName(host);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+        InetAddress address = InetAddress.getByName(mcast_addr);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, mcast_port);
         try {
             socket.send(packet);
         } catch (IOException e) {
@@ -99,16 +106,40 @@ public class Client {
      * @throws UnknownHostException
      */
     private static String receiveResponse(DatagramSocket socket) throws UnknownHostException {
-        InetAddress address = InetAddress.getByName(host);
+        InetAddress address = InetAddress.getByName(lookup_addr);
         byte[] buffer = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, lookup_port);
         try {
             socket.setSoTimeout(TIMEOUT);
             socket.receive(packet);
         } catch (IOException e) {
-            System.out.println("Error receiving response");
+            System.out.println("Error receiving response from the lookup server");
         }
 
         return new String(packet.getData());
+    }
+
+    /**
+     * Method that retreives the lookup server information in a datagram packet
+     * @return A datagram packet containing the server's ip address and port
+     */
+    private static DatagramPacket getLookupServer() {
+        MulticastSocket mcast_socket = new MulticastSocket(mcast_port);
+        InetAddress address = InetAddress.getByName(mcast_addr);
+        mcast_socket.joinGroup(address);
+
+        byte[] buffer = new byte[1024];
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        try {
+            mcast_socket.setSoTimeout(TIMEOUT);
+            mcast_socket.receive(packet);
+        } catch (IOException e) {
+            System.out.println("Error receiving response from the multicast server");
+        }
+
+        mcast_socket.leaveGroup(address);
+        mcast_socket.close();
+
+        return packet;
     }
 }
