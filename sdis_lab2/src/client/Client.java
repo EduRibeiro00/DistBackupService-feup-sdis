@@ -32,6 +32,15 @@ public class Client {
         String oper = args[2];
         String dnsName = args[3];
 
+        // get lookup server's information
+        DatagramPacket mcast_pckt = getLookupServer();
+        lookup_addr = mcast_pckt.getAddress();
+        lookup_port = Integer.parseInt(mcast_pckt.getData());
+
+        String message = "multicast: " + mcast_addr + " " + Integer.toString(mcast_port) + ": " + lookup_addr + " " + Integer.toString(lookup_port);
+        System.out.println(message);
+
+
         // open socket
         socket = new DatagramSocket();
 
@@ -49,11 +58,6 @@ public class Client {
             System.out.println("Invalid request");
             System.exit(2);
         }
-
-        // get lookup server's information
-        DatagramPacket mcast_pckt = getLookupServer();
-        lookup_addr = mcast_pckt.getAddress();
-        lookup_port = Integer.parseInt(mcast_pckt.getData());
 
 
         // receive and print response
