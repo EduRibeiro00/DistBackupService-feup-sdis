@@ -19,7 +19,7 @@ public class Server {
      * Main method
      * @param args args[1] should specify port number
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         // check arguments
         if (args.length < 3) {
             System.out.println("Invalid number of arguments");
@@ -42,7 +42,7 @@ public class Server {
             socket = new DatagramSocket(port);
             mcast_socket = new MulticastSocket(mcast_port);
         }
-        catch (SocketException e) {
+        catch (IOException e) {
             System.out.println("Could not open sockets");
             System.exit(3);
         }
@@ -72,18 +72,26 @@ public class Server {
      * Method that spawns a thread pool executor service, that sends periodically the server port
      * @return The thread pool service
      */
-    private static ScheduledExecutorService spawnBroadcastExecutor() {
+    private static ScheduledExecutorService spawnBroadcastExecutor() throws UnknownHostException {
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);
 
         executor.scheduleAtFixedRate(new Runnable() {
            public void run() {
                 byte[] content = Integer.toString(port).getBytes();
-                DatagramPacket mcast_packet = new DatagramPacket(content, content.length, InetAddress.getByName(mcast_addr), mcast_port);
+                try {
+                    DatagramPacket mcast_packet = new DatagramPacket(content, content.length, InetAddress.getByName(mcast_addr), mcast_port);
 
+                    String lookup_addr = InetAddress.getLocalHost().getHostAddress();
+                    String message = "multicast: " + mcast_addr + " " + Integer.toString(mcast_port) + ": " + lookup_addr + " " + Integer.toString(port);
+                    System.out.println(message);
 
-                String message = "multicast: " + mcast_addr + " " + Integer.toString(mcast_port) + ": " + mcast_addr + " " + Integer.toString(port);
-                System.out.println(message);
-                mcast_socket.send(mcast_packet);
+                    mcast_socket.setTimeToLive(1);
+                    mcast_socket.send(mcast_packet);
+                } catch (UnknownHostException e) {
+                    System.out.println("Error sending multicast");
+                } catch (IOException e) {
+                    System.out.println("Error sending multicast");
+                }
            }
         },
          0,
