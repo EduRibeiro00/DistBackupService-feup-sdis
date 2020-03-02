@@ -1,12 +1,10 @@
 package server;
 
-import java.rmi.RemoteException;
-import java.util.HashMap;
-import java.util.List;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
-public class Server implements RemoteInterface {
-    private static HashMap<String,String> addressTable; // dns table with pairs <name, ip_address>
-
+public class Server {
     public static void main(String[] args) {
         // check arguments
         if (args.length != 1) {
@@ -15,31 +13,15 @@ public class Server implements RemoteInterface {
         }
 
         String remoteObjectName = args[0];
+        RemoteObject srvObj = new RemoteObject();
 
-
-
-    }
-
-    public static void printMessage(String oper, List<String> opnds, String out) {
-        String output = oper;
-        for (int i = 0; i < opnds.size(); i++) {
-            output += (" " + opnds.get(i));
+        try {
+            RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(srvObj, 0);
+            Registry rmiReg = LocateRegistry.createRegistry(1099);
+            rmiReg.bind(remoteObjectName, remoteObject);
         }
-
-        output += (" :: " + out);
-
-        System.out.println(output);
-    }
-
-
-    @Override
-    public String register(String dnsName, String ipAddress) throws RemoteException {
-        return null;
-    }
-
-
-    @Override
-    public String lookup(String dnsName) throws RemoteException {
-        return null;
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
