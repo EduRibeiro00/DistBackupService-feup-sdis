@@ -22,7 +22,7 @@ public class TestApp {
             Registry registry = LocateRegistry.getRegistry(hostName);
             RemoteInterface server = (RemoteInterface) registry.lookup(remoteObjectName);
 
-            String out = server.test("ola bro");
+            String out = server.test("ola bro!!!");
             System.out.println(out);
 
         } catch(RemoteException e) {

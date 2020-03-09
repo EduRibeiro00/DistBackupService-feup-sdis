@@ -17,7 +17,7 @@ public class Peer {
 
         try {
             RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(srvObj, 0);
-            Registry rmiReg = LocateRegistry.createRegistry(1099);
+            Registry rmiReg = LocateRegistry.getRegistry();
             rmiReg.bind(remoteObjectName, remoteObject);
         }
         catch (Exception e) {
