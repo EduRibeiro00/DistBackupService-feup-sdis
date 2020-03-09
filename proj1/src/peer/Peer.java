@@ -61,7 +61,7 @@ public class Peer {
         String fileIdStr = encodeFileId(fileId);
         String msgTypeStr = MessageTypeList[msgType.ordinal()];
 
-        String header = version + " " + msgTypeStr + " " + senderId + " " + fileId;
+        String header = version + " " + msgTypeStr + " " + senderId + " " + fileIdStr;
         switch(msgType) {
             case PUTCHUNK:
                 header += " " + Integer.toString(chunkNo) + " " + Integer.toString(RepDeg);
@@ -71,6 +71,8 @@ public class Peer {
             case CHUNK:
             case REMOVED:
                 header += " " + Integer.toString(chunkNo);
+                break;
+            case DELETE:
                 break;
         }
         header += "\r\n\r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed
