@@ -4,6 +4,9 @@ import java.util.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
 enum MessageType {
     PUTCHUNK,
@@ -19,6 +22,30 @@ public class Peer {
     private static MulticastSocket mcast_backup;    // multicast socket to backup file chunk data
     private static MulticastSocket mcast_restore;   // multicast socket to restore file chunk data
     private static String[] MessageTypeList = {"PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED"};
+
+    /**
+     * Main function
+     * @param args command line arguments
+     */
+    public static void main(String[] args) {
+        // check arguments
+        if (args.length != 1) {
+            System.out.println("Invalid number of arguments");
+            System.exit(1);
+        }
+
+        String remoteObjectName = args[0];
+        RemoteObject srvObj = new RemoteObject();
+
+        try {
+            RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(srvObj, 0);
+            Registry rmiReg = LocateRegistry.getRegistry();
+            rmiReg.bind(remoteObjectName, remoteObject);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Creates a message header for peer-peer communication
@@ -76,5 +103,4 @@ public class Peer {
         byte[] encodedhash = digest.digest(str.getBytes(StandardCharsets.UTF_8));
         return encodedhash;
     }
-
 }
