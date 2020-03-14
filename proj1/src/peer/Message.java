@@ -9,7 +9,7 @@ public class Message {
     byte[] body;
 
     public Message(byte[] data) throws Exception {
-        String message = data.toString();
+        String message = Arrays.toString(data);
         String[] split = message.split(this.crlf);
 
         if (split.length != 2){
