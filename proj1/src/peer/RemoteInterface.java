@@ -8,4 +8,5 @@ import java.rmi.RemoteException;
  */
 public interface RemoteInterface extends Remote {
     String test(String testString) throws RemoteException;
+    int backup(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) throws RemoteException;
 }

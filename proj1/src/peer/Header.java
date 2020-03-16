@@ -19,7 +19,7 @@ public class Header {
     int replicationDeg;
     List<String> other;
 
-    private static String[] MessageTypeList = {"PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED"};
+    private static String[] messageTypeList = {"PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED"};
 
     /**
      * Fills the Header class based on the elements of the header list, for message receiving
@@ -50,15 +50,17 @@ public class Header {
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
-     * @param RepDeg the desired replication degree of the file's chunk (may be unused)
+     * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
-    public Header(String version, MessageType msgType, String senderId, String fileId, int chunkNo, int repDeg) {
+    public Header(String version, MessageType msgType, String senderId, String fileId, int chunkNo, int repDeg) throws NoSuchAlgorithmException {
         this.version = version;
         this.messageType = msgType;
         this.senderId = senderId;
-        this.fileId = fileId;
         this.chunkNo = chunkNo;
         this.replicationDeg = repDeg;
+
+        byte[] fileIdByte = getSHA256(fileId);
+        this.fileId = encodeFileId(fileIdByte);
     }
 
     /**
@@ -67,11 +69,9 @@ public class Header {
      * @throws NoSuchAlgorithmException
      */
     public String convertToString() throws NoSuchAlgorithmException {
-        String msgTypeStr = MessageTypeList[messageType.ordinal()];
-        byte[] fileIdByte = getSHA256(fileId);
-        String fileIdStr = encodeFileId(fileIdByte);
+        String msgTypeStr = messageTypeList[messageType.ordinal()];
 
-        String header = version + " " + msgTypeStr + " " + senderId + " " + fileIdStr;
+        String header = version + " " + msgTypeStr + " " + senderId + " " + fileId;
         switch(messageType) {
             case PUTCHUNK:
                 header += " " + Integer.toString(chunkNo) + " " + Integer.toString(replicationDeg);
