@@ -1,13 +1,15 @@
 package peer;
 
+import link.RemoteInterface;
+
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 /**
- * Class that represents the connection that the peer has with the client testing app
+ * Class that has the function to create and launch a peer
  */
-public class TestServer {
+public class PeerLauncher {
 
     public static void main(String[] args) {
         // check arguments
@@ -29,9 +31,11 @@ public class TestServer {
 
 
         try {
-            Peer peerObj = new Peer(ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR, protocolVersion, peerID);
+            Peer peer = new Peer(ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR, protocolVersion, peerID);
+            PeerTestLink peerLinkObj = new PeerTestLink(peer);
 
-            RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(peerObj, 0);
+
+            RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(peerLinkObj, 0);
             Registry rmiReg = LocateRegistry.getRegistry();
             rmiReg.bind(serviceAccessPoint, remoteObject);
         }

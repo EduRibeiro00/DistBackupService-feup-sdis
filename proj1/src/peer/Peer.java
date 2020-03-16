@@ -10,13 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class Peer implements RemoteInterface {
-    private MulticastSocket mcast_control;  // multicast socket to send control messages
-    private MulticastSocket mcast_backup;   // multicast socket to backup file chunk data
-    private MulticastSocket mcast_restore;  // multicast socket to restore file chunk data
-    private String peerID;                     // identifier of the peer
-    private String protocolVersion;         // protocol version that is being used
-    private final static int TIMEOUT = 2000;
+public class Peer {
+    private MulticastSocket mcast_control;      // multicast socket to send control messages
+    private MulticastSocket mcast_backup;       // multicast socket to backup file chunk data
+    private MulticastSocket mcast_restore;      // multicast socket to restore file chunk data
+    private String peerID;                      // identifier of the peer
+    private String protocolVersion;             // protocol version that is being used
+    private final static int TIMEOUT = 2000;    // timeout value
+
+    private ChunkManager chunkManager;          // chunk manager
+    private int availableDiskSpace;             // current available disk space
+
 
     /**
      * Constructor of the peer
@@ -44,51 +48,18 @@ public class Peer implements RemoteInterface {
 
         this.protocolVersion = protocolVersion;
         this.peerID = String.valueOf(peerID);
-    }
 
-
-
-    /**
-     * Method to process delete requests sent by a client
-     * @param testString
-     * @return
-     */
-    @Override
-    public String delete(String testString) {
-        return null;
+        this.chunkManager = new ChunkManager();
+        this.availableDiskSpace = 6400000; // TODO: confirmar que e este o valor
     }
 
 
     /**
-     * Method to process restore requests sent by a client
-     * @param testString
+     * Retrieves the protocol version.
      * @return
      */
-    @Override
-    public String restore(String testString) {
-        return null;
-    }
-
-
-    /**
-     * Method to process reclaim requests sent by a client
-     * @param testString
-     * @return
-     */
-    @Override
-    public String reclaim(String testString) {
-        return null;
-    }
-
-
-    /**
-     * Method to process state requests sent by a client
-     * @param testString
-     * @return
-     */
-    @Override
-    public String state(String testString) {
-        return null;
+    public String getProtocolVersion() {
+        return protocolVersion;
     }
 
 
@@ -97,12 +68,11 @@ public class Peer implements RemoteInterface {
      * Sends a backup message for peer-peer communication
      * @param version the version of the protocol to be used
      * @param fileId the file identifier in the backup service, as the result of SHA256
-     * @param chunkNo the chunk number of the specified file (may be unsued)
+     * @param chunkNo the chunk number of the specified file (may be unusued)
      * @param fileContent the body of the message
      * @param replicationDeg the desired replication degree of the file's chunk (may be unused)
      */
-    @Override
-    public int backup(String version, String fileId, int chunkNo, String fileContent, int replicationDeg) {
+    public int backupChunk(String version, String fileId, int chunkNo, String fileContent, int replicationDeg) {
         List<String> replicationIDs = new ArrayList<>();
         Message msg;
         for (int i = 0; i < 5 && replicationIDs.size() < replicationDeg; i++) {
