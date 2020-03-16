@@ -4,7 +4,6 @@ import java.net.DatagramPacket;
 import java.net.MulticastSocket;
 import java.util.Arrays;
 import java.util.Queue;
-import java.util.concurrent.Callable;
 
 public class BackupProtocolThread implements Runnable {
     MulticastSocket mControl, mBackup, mRecovery;
