@@ -12,15 +12,14 @@ public class Peer implements RemoteInterface {
     private static MulticastSocket mcast_control;   // multicast socket to send control messages
     private static MulticastSocket mcast_backup;    // multicast socket to backup file chunk data
     private static MulticastSocket mcast_restore;   // multicast socket to restore file chunk data
-    final static int TIMEOUT = 10000;
+    final static int TIMEOUT = 2000;
 
 
 
 
     @Override
     public String test(String testString) {
-        String str = "Ya, recebi. A string foi: " + testString;
-        return str;
+        return String.format("Ya, recebi. A string foi: %s", testString);
     }
 
     /**
@@ -29,39 +28,43 @@ public class Peer implements RemoteInterface {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      * @param fileContent the body of the message
      * @param replicationDeg the desired replication degree of the message
-     * @throws RemoteException
      */
     @Override
-    public int backup(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) throws RemoteException {
+    public int backup(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) {
         List<String> replicationIDs = new ArrayList<>();
 
-        Message msg = new Message("1.0", MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
-        try {
-            msg.send(mcast_backup);
-        } catch (NoSuchAlgorithmException | IOException e) {
-            e.printStackTrace();
-            return replicationIDs.size();
-        }
-
-        try {
-            mcast_control.setSoTimeout(TIMEOUT);
-
-            DatagramPacket pkt = new DatagramPacket(new byte[1000], 1000);
-            while (true) {
-                mcast_control.receive(pkt);
-                try {
-                    Message receivedMsg = new Message(pkt.getData());
-                    if(receivedMsg.header.messageType == MessageType.STORED
-                            && receivedMsg.header.fileId.equals(msg.header.fileId)
-                            && !replicationIDs.contains(receivedMsg.header.senderId)) {
-
-                        replicationIDs.add(receivedMsg.header.senderId);
-                        mcast_control.setSoTimeout(TIMEOUT);
-                    }
-                } catch (Exception ignored) { }
+        for (int i = 0; i < 5 && replicationIDs.size() < replicationDeg; i++) {
+            Message msg = new Message("1.0", MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
+            try {
+                msg.send(mcast_backup);
+            } catch (NoSuchAlgorithmException | IOException e) {
+                e.printStackTrace();
+                return replicationIDs.size();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            try {
+                Header msgHeader = msg.getHeader();
+                int timeout = (int) (TIMEOUT * Math.pow(2, i));
+                mcast_control.setSoTimeout(timeout);
+                Message receivedMsg = new Message();
+
+                while (true) {
+                    try {
+                        receivedMsg.receiveControl(mcast_control);
+                        Header receivedMsgHeader = receivedMsg.getHeader();
+                        if(receivedMsgHeader.getMessageType() == MessageType.STORED
+                                && receivedMsgHeader.getFileId().equals(msgHeader.getFileId())
+                                && receivedMsgHeader.getChunkNo() == msgHeader.getChunkNo()
+                                && !replicationIDs.contains(receivedMsgHeader.getSenderId())) {
+
+                            replicationIDs.add(receivedMsgHeader.getSenderId());
+                            mcast_control.setSoTimeout(timeout);
+                        }
+                    } catch (Exception ignored) { }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         return replicationIDs.size();

@@ -6,10 +6,14 @@ import java.net.*;
 import java.security.NoSuchAlgorithmException;
 
 public class Message {
-    final String crlf = "\r\n";
-    final String lastCRLF = "\r\n\r\n";
-    Header header;
-    String body;
+    private final String crlf = "\r\n";
+    private final String lastCRLF = "\r\n\r\n";
+    private Header header;
+    private String body;
+
+    public Message() {
+
+    }
 
     /**
      * Constructor for message receiving
@@ -47,8 +51,8 @@ public class Message {
      * @return byte array of the converted message
      * @throws NoSuchAlgorithmException
      */
-    public byte[] convertToBytes() throws NoSuchAlgorithmException {
-        String total = header.convertToString() + crlf + body;
+    private byte[] convertToBytes() throws NoSuchAlgorithmException {
+        String total = header.toString() + crlf + body;
         return total.getBytes();
     }
 
@@ -67,8 +71,8 @@ public class Message {
     /**
      * @param mcast_socket multicast socket that will be used to
      */
-    public void receive(MulticastSocket mcast_socket) throws Exception {
-        byte[] buf = new byte[65000];
+    public void receiveChunk(MulticastSocket mcast_socket) throws Exception {
+        byte[] buf = new byte[64500];
         DatagramPacket mcast_packet = new DatagramPacket(buf, 65000); //InetAddress address, int port ???
         mcast_socket.receive(mcast_packet);
 
@@ -81,5 +85,33 @@ public class Message {
 
         this.header = new Header(Arrays.asList(split[0].split(" ")));
         this.body = split[1];
+    }
+
+    /**
+     * @param mcast_socket multicast socket that will be used to
+     */
+    public void receiveControl(MulticastSocket mcast_socket) throws Exception {
+        byte[] buf = new byte[500];
+        DatagramPacket mcast_packet = new DatagramPacket(buf, 500); //InetAddress address, int port ???
+        mcast_socket.receive(mcast_packet);
+
+        String message = Arrays.toString(mcast_packet.getData());
+        String[] split = message.split(this.crlf);
+
+        if (split.length != 2){
+            throw new Exception("Invalid message received");
+        }
+
+        this.header = new Header(Arrays.asList(split[0].split(" ")));
+        this.body = split[1];
+    }
+
+
+    public Header getHeader() {
+        return header;
+    }
+
+    public String getBody() {
+        return body;
     }
 }
