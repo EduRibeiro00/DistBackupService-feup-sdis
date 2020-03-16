@@ -14,7 +14,7 @@ public class Peer implements RemoteInterface {
     private MulticastSocket mcast_control;  // multicast socket to send control messages
     private MulticastSocket mcast_backup;   // multicast socket to backup file chunk data
     private MulticastSocket mcast_restore;  // multicast socket to restore file chunk data
-    private String peerID;                     // identifier of the peer
+    private String peerID;                  // identifier of the peer
     private String protocolVersion;         // protocol version that is being used
     private final static int TIMEOUT = 2000;
 
@@ -45,7 +45,6 @@ public class Peer implements RemoteInterface {
         this.protocolVersion = protocolVersion;
         this.peerID = String.valueOf(peerID);
     }
-
 
 
     /**
@@ -109,12 +108,7 @@ public class Peer implements RemoteInterface {
             try {
                 msg = new Message(version, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
                 msg.send(mcast_backup);
-            } catch (NoSuchAlgorithmException | IOException e) {
-                e.printStackTrace();
-                return replicationIDs.size();
-            }
 
-            try {
                 Header msgHeader = msg.getHeader();
                 int timeout = (int) (TIMEOUT * Math.pow(2, i));
                 mcast_control.setSoTimeout(timeout);
@@ -134,7 +128,7 @@ public class Peer implements RemoteInterface {
                         }
                     } catch (Exception ignored) { }
                 }
-            } catch (IOException e) {
+            } catch (NoSuchAlgorithmException | IOException e) {
                 e.printStackTrace();
             }
         }
