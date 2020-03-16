@@ -8,6 +8,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 
 public class Peer implements RemoteInterface {
+    private int id;
     private static MulticastSocket mcast_control;   // multicast socket to send control messages
     private static MulticastSocket mcast_backup;    // multicast socket to backup file chunk data
     private static MulticastSocket mcast_restore;   // multicast socket to restore file chunk data
