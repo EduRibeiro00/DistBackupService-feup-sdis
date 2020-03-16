@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.net.*;
 import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class Peer implements RemoteInterface {
-    private int id;
     private static MulticastSocket mcast_control;   // multicast socket to send control messages
     private static MulticastSocket mcast_backup;    // multicast socket to backup file chunk data
     private static MulticastSocket mcast_restore;   // multicast socket to restore file chunk data
     final static int TIMEOUT = 10000;
+
+
 
 
     @Override
@@ -30,13 +33,14 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public int backup(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) throws RemoteException {
-        int replication = 0;
+        List<String> replicationIDs = new ArrayList<>();
+
         Message msg = new Message("1.0", MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
         try {
             msg.send(mcast_backup);
         } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
-            return replication;
+            return replicationIDs.size();
         }
 
         try {
@@ -48,8 +52,10 @@ public class Peer implements RemoteInterface {
                 try {
                     Message receivedMsg = new Message(pkt.getData());
                     if(receivedMsg.header.messageType == MessageType.STORED
-                            && receivedMsg.header.fileId.equals(msg.header.fileId)) {
-                        replication++;
+                            && receivedMsg.header.fileId.equals(msg.header.fileId)
+                            && !replicationIDs.contains(receivedMsg.header.senderId)) {
+
+                        replicationIDs.add(receivedMsg.header.senderId);
                         mcast_control.setSoTimeout(TIMEOUT);
                     }
                 } catch (Exception ignored) { }
@@ -58,7 +64,7 @@ public class Peer implements RemoteInterface {
             e.printStackTrace();
         }
 
-        return replication;
+        return replicationIDs.size();
     }
 }
 
