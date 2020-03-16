@@ -23,12 +23,16 @@ public class PeerTestLink implements RemoteInterface {
     /**
      * Implementation of the backup request.
      * @param filepath filepath of the file we want to backup
-     * @param replicationFactor desired replication factor for the file's chunks
+     * @param replicationDegree desired replication factor for the file's chunks
      * @throws RemoteException
      */
     @Override
-    public void backup(String filepath, int replicationFactor) throws RemoteException {
+    public void backup(String filepath, int replicationDegree) {
+        if (filepath == null || replicationDegree < 1) {
+            throw new IllegalArgumentException("Invalid arguments for backup!");
+        }
 
+        // TODO
     }
 
 
@@ -38,7 +42,7 @@ public class PeerTestLink implements RemoteInterface {
      * @throws RemoteException
      */
     @Override
-    public void delete(String filepath) throws RemoteException {
+    public void delete(String filepath) {
 
     }
 
@@ -49,7 +53,7 @@ public class PeerTestLink implements RemoteInterface {
      * @throws RemoteException
      */
     @Override
-    public void restore(String filepath) throws RemoteException {
+    public void restore(String filepath) {
 
     }
 
@@ -60,7 +64,7 @@ public class PeerTestLink implements RemoteInterface {
      * @throws RemoteException
      */
     @Override
-    public void reclaim(int diskSpace) throws RemoteException {
+    public void reclaim(int diskSpace) {
 
     }
 
@@ -71,7 +75,7 @@ public class PeerTestLink implements RemoteInterface {
      * @throws RemoteException
      */
     @Override
-    public String state() throws RemoteException {
+    public String state() {
         return null;
     }
 }

@@ -11,15 +11,17 @@ import java.util.List;
 
 
 public class Peer {
-    private MulticastSocket mcast_control;      // multicast socket to send control messages
-    private MulticastSocket mcast_backup;       // multicast socket to backup file chunk data
-    private MulticastSocket mcast_restore;      // multicast socket to restore file chunk data
-    private String peerID;                      // identifier of the peer
-    private String protocolVersion;             // protocol version that is being used
-    private final static int TIMEOUT = 2000;    // timeout value
+    private MulticastSocket mcast_control;              // multicast socket to send control messages
+    private MulticastSocket mcast_backup;               // multicast socket to backup file chunk data
+    private MulticastSocket mcast_restore;              // multicast socket to restore file chunk data
+    private String peerID;                              // identifier of the peer
+    private String protocolVersion;                     // protocol version that is being used
 
-    private ChunkManager chunkManager;          // chunk manager
-    private int availableDiskSpace;             // current available disk space
+    private ChunkManager chunkManager;                  // chunk manager
+    private int availableDiskSpace;                     // current available disk space
+
+    private final static int TIMEOUT = 2000;            // timeout value
+    private final static String PEER_DIR = "peers/";    // constant that denotes the name of the peer directory
 
 
     /**
@@ -37,20 +39,36 @@ public class Peer {
         this.mcast_control = new MulticastSocket(portMC);
         this.mcast_control.joinGroup(InetAddress.getByName(ipAddressMC));
         this.mcast_control.setTimeToLive(1);
+        System.out.println("MC channel up!");
 
         this.mcast_backup = new MulticastSocket(portMDB);
         this.mcast_backup.joinGroup(InetAddress.getByName(ipAddressMDB));
         this.mcast_backup.setTimeToLive(1);
+        System.out.println("MDB channel up!");
 
         this.mcast_restore = new MulticastSocket(portMDR);
         this.mcast_restore.joinGroup(InetAddress.getByName(ipAddressMDR));
         this.mcast_restore.setTimeToLive(1);
+        System.out.println("MDR channel up!");
 
         this.protocolVersion = protocolVersion;
         this.peerID = String.valueOf(peerID);
 
         this.chunkManager = new ChunkManager();
+        System.out.println("Started chunk manager...");
+
         this.availableDiskSpace = 6400000; // TODO: confirmar que e este o valor
+
+
+    }
+
+
+    /**
+     * Method that will create a directory for the peer, if it doesn't exist already
+     * @param path Path of the folder to be created
+     */
+    private void initDirectory(String path) {
+
     }
 
 
