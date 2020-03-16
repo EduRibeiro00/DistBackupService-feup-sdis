@@ -5,15 +5,18 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class Peer implements RemoteInterface {
     private MulticastSocket mcast_control;  // multicast socket to send control messages
     private MulticastSocket mcast_backup;   // multicast socket to backup file chunk data
     private MulticastSocket mcast_restore;  // multicast socket to restore file chunk data
-    private int peerID;                     // identifier of the peer
+    private String peerID;                     // identifier of the peer
     private String protocolVersion;         // protocol version that is being used
-
+    private final static int TIMEOUT = 2000;
 
     /**
      * Constructor of the peer
@@ -40,20 +43,9 @@ public class Peer implements RemoteInterface {
         this.mcast_restore.setTimeToLive(1);
 
         this.protocolVersion = protocolVersion;
-        this.peerID = peerID;
+        this.peerID = String.valueOf(peerID);
     }
 
-
-    /**
-     * Method to process backup requests sent by a client
-     * @param testString
-     * @return
-     */
-    @Override
-    public String backup(String testString) {
-        // TODO
-        return null;
-    }
 
 
     /**
@@ -101,17 +93,53 @@ public class Peer implements RemoteInterface {
 
 
     /**
+     * Backup request.
      * Sends a backup message for peer-peer communication
      * @param version the version of the protocol to be used
-     * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
-     * @param repDeg the desired replication degree of the file's chunk (may be unused)
-     * @param body the body of the message
+     * @param fileContent the body of the message
+     * @param replicationDeg the desired replication degree of the file's chunk (may be unused)
      */
-    private void sendBackupMessage(String version, String senderId, String fileId, int chunkNo, int repDeg, byte[] body) {
-        Message msg = new Message(version, MessageType.PUTCHUNK, senderId, fileId, chunkNo, repDeg, body);
-        //msg.send();
+    @Override
+    public int backup(String version, String fileId, int chunkNo, String fileContent, int replicationDeg) {
+        List<String> replicationIDs = new ArrayList<>();
+        Message msg;
+        for (int i = 0; i < 5 && replicationIDs.size() < replicationDeg; i++) {
+            try {
+                msg = new Message(version, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
+                msg.send(mcast_backup);
+            } catch (NoSuchAlgorithmException | IOException e) {
+                e.printStackTrace();
+                return replicationIDs.size();
+            }
+
+            try {
+                Header msgHeader = msg.getHeader();
+                int timeout = (int) (TIMEOUT * Math.pow(2, i));
+                mcast_control.setSoTimeout(timeout);
+                Message receivedMsg = new Message();
+
+                while (true) {
+                    try {
+                        receivedMsg.receiveControl(mcast_control);
+                        Header receivedMsgHeader = receivedMsg.getHeader();
+                        if(receivedMsgHeader.getMessageType() == MessageType.STORED
+                                && receivedMsgHeader.getFileId().equals(msgHeader.getFileId())
+                                && receivedMsgHeader.getChunkNo() == msgHeader.getChunkNo()
+                                && !replicationIDs.contains(receivedMsgHeader.getSenderId())) {
+
+                            replicationIDs.add(receivedMsgHeader.getSenderId());
+                            mcast_control.setSoTimeout(timeout);
+                        }
+                    } catch (Exception ignored) { }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return replicationIDs.size();
     }
 }
 

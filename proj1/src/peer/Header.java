@@ -3,6 +3,7 @@ package peer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -10,26 +11,23 @@ import java.util.List;
  * either when receiving or when sending
  */
 public class Header {
-    int size;
-    String version;
-    MessageType messageType;
-    String senderId;
-    String fileId;
-    int chunkNo;
-    int replicationDeg;
-    List<String> other;
+    private String version;
+    private MessageType messageType;
+    private String senderId;
+    private String fileId;
+    private int chunkNo;
+    private int replicationDeg;
+    private List<String> other;
 
-    private static String[] MessageTypeList = {"PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED"};
+    private static List<String> messageTypeList = Arrays.asList("PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED");
 
     /**
      * Fills the Header class based on the elements of the header list, for message receiving
      * @param header a list of elemtns received from a peer
      */
     public Header(List<String> header) throws Exception {
-        this.size = header.size();
-
         // No point in processing the rest if we don't know any message with header size < 4
-        if(this.size < 4 || this.size > 6) {
+        if(header.size() < 4 || header.size() > 6) {
             throw new Exception("Invalid message header received");
         }
 
@@ -50,42 +48,72 @@ public class Header {
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
-     * @param RepDeg the desired replication degree of the file's chunk (may be unused)
+     * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
-    public Header(String version, MessageType msgType, String senderId, String fileId, int chunkNo, int repDeg) {
+    public Header(String version, MessageType msgType, String senderId, String fileId, int chunkNo, int repDeg) throws NoSuchAlgorithmException {
         this.version = version;
         this.messageType = msgType;
         this.senderId = senderId;
-        this.fileId = fileId;
         this.chunkNo = chunkNo;
         this.replicationDeg = repDeg;
+
+        byte[] fileIdByte = getSHA256(fileId);
+        this.fileId = encodeFileId(fileIdByte);
     }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public MessageType getMessageType() {
+        return messageType;
+    }
+
+    public String getSenderId() {
+        return senderId;
+    }
+
+    public String getFileId() {
+        return fileId;
+    }
+
+    public int getChunkNo() {
+        return chunkNo;
+    }
+
+    public int getReplicationDeg() {
+        return replicationDeg;
+    }
+
+    public List<String> getOther() {
+        return other;
+    }
+
+
 
     /**
      * Creates a message header in string format for peer-peer communication
      * @return the message header in a string
-     * @throws NoSuchAlgorithmException
      */
-    public String convertToString() throws NoSuchAlgorithmException {
-        String msgTypeStr = MessageTypeList[messageType.ordinal()];
-        byte[] fileIdByte = getSHA256(fileId);
-        String fileIdStr = encodeFileId(fileIdByte);
+    @Override
+    public String toString() {
+        String msgTypeStr = messageType.name();
 
-        String header = version + " " + msgTypeStr + " " + senderId + " " + fileIdStr;
+        String header = version + " " + msgTypeStr + " " + senderId + " " + fileId;
         switch(messageType) {
             case PUTCHUNK:
-                header += " " + Integer.toString(chunkNo) + " " + Integer.toString(replicationDeg);
+                header += " " + chunkNo + " " + replicationDeg;
                 break;
             case STORED:
             case GETCHUNK:
             case CHUNK:
             case REMOVED:
-                header += " " + Integer.toString(chunkNo);
+                header += " " + chunkNo;
                 break;
             case DELETE:
                 break;
         }
-        header += "\r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed
+        header += " \r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed
         return header;
     }
 

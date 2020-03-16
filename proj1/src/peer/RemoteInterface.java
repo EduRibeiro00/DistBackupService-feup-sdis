@@ -11,11 +11,15 @@ public interface RemoteInterface extends Remote {
 
     /**
      * Backup request.
-     * @param testString
-     * @return
+     * Sends a backup message for peer-peer communication
+     * @param version the version of the protocol to be used
+     * @param fileId the file identifier in the backup service, as the result of SHA256
+     * @param chunkNo the chunk number of the specified file (may be unsued)
+     * @param fileContent the body of the message
+     * @param replicationDeg the desired replication degree of the file's chunk (may be unused)
      * @throws RemoteException
      */
-    String backup(String testString) throws RemoteException;
+    int backup(String version, String fileId, int chunkNo, String fileContent, int replicationDeg) throws RemoteException;
 
     /**
      * Restore request.
