@@ -1,8 +1,10 @@
 package peer;
+import java.io.IOException;
 import java.net.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.NoSuchAlgorithmException;
 
 
 public class Peer implements RemoteInterface {
@@ -25,10 +27,12 @@ public class Peer implements RemoteInterface {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      * @param RepDeg the desired replication degree of the file's chunk (may be unused)
      * @param body the body of the message
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
      */
-    private void sendBackupMessage(String version, String senderId, String fileId, int chunkNo, int repDeg, byte[] body) {
+    private void sendBackupMessage(String version, String senderId, String fileId, int chunkNo, int repDeg, String body) throws NoSuchAlgorithmException, IOException {
         Message msg = new Message(version, MessageType.PUTCHUNK, senderId, fileId, chunkNo, repDeg, body);
-        //msg.send();
+        msg.send(mcast_backup);
     }
 }
 
