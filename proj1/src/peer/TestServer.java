@@ -17,15 +17,15 @@ public class TestServer {
         }
 
         // parse arguments
-        String ipAddressMC = args[0];
-        int portMC = Integer.parseInt(args[1]);
-        String ipAddressMDB = args[2];
-        int portMDB = Integer.parseInt(args[3]);
-        String ipAddressMDR = args[4];
-        int portMDR = Integer.parseInt(args[5]);
-        String protocolVersion = args[6];
-        int peerID = Integer.parseInt(args[7]);
-        String serviceAccessPoint = args[8];
+        String protocolVersion = args[0];
+        int peerID = Integer.parseInt(args[1]);
+        String serviceAccessPoint = args[2];
+        String ipAddressMC = args[3];
+        int portMC = Integer.parseInt(args[4]);
+        String ipAddressMDB = args[5];
+        int portMDB = Integer.parseInt(args[6]);
+        String ipAddressMDR = args[7];
+        int portMDR = Integer.parseInt(args[8]);
 
 
         try {
