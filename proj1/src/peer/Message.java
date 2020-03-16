@@ -32,7 +32,7 @@ public class Message {
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
-     * @param RepDeg the desired replication degree of the file's chunk (may be unused)
+     * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
     public Message(String version, MessageType msgType, String senderId, String fileId, int chunkNo, int repDeg, byte[] body) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo, repDeg);
