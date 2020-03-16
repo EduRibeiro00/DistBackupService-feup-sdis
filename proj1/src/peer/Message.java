@@ -1,7 +1,7 @@
 package peer;
 
 import java.util.Arrays;
-
+import java.net.*;
 
 public class Message {
     final String crlf = "\r\n";
@@ -38,4 +38,10 @@ public class Message {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo, repDeg);
         this.body = body;
     }
+
+    /*
+    public void send(MulticastSocket mcast_socket) {
+
+    }
+    */
 }

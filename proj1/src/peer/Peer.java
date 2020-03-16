@@ -1,6 +1,5 @@
 package peer;
 import java.net.*;
-import java.security.NoSuchAlgorithmException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -10,7 +9,6 @@ public class Peer {
     private static MulticastSocket mcast_control;   // multicast socket to send control messages
     private static MulticastSocket mcast_backup;    // multicast socket to backup file chunk data
     private static MulticastSocket mcast_restore;   // multicast socket to restore file chunk data
-    private static String[] MessageTypeList = {"PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED"};
 
     /**
      * Main function
