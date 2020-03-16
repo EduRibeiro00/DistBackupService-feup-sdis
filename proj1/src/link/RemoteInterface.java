@@ -11,10 +11,10 @@ public interface RemoteInterface extends Remote {
     /**
      * Backup request.
      * @param filepath filepath of the file we want to backup
-     * @param replicationFactor desired replication factor for the file's chunks
+     * @param replicationDegree desired replication factor for the file's chunks
      * @throws RemoteException
      */
-    void backup(String filepath, int replicationFactor) throws RemoteException;
+    void backup(String filepath, int replicationDegree) throws RemoteException;
 
 
     /**
