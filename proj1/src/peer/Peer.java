@@ -45,7 +45,7 @@ public class Peer implements RemoteInterface {
 
 
     /**
-     * Method to process backup requests received by a client
+     * Method to process backup requests sent by a client
      * @param testString
      * @return
      */
@@ -56,21 +56,44 @@ public class Peer implements RemoteInterface {
     }
 
 
+    /**
+     * Method to process delete requests sent by a client
+     * @param testString
+     * @return
+     */
     @Override
     public String delete(String testString) {
         return null;
     }
 
+
+    /**
+     * Method to process restore requests sent by a client
+     * @param testString
+     * @return
+     */
     @Override
     public String restore(String testString) {
         return null;
     }
 
+
+    /**
+     * Method to process reclaim requests sent by a client
+     * @param testString
+     * @return
+     */
     @Override
     public String reclaim(String testString) {
         return null;
     }
 
+
+    /**
+     * Method to process state requests sent by a client
+     * @param testString
+     * @return
+     */
     @Override
     public String state(String testString) {
         return null;
