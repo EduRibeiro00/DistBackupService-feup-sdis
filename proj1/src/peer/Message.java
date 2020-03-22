@@ -11,9 +11,7 @@ public class Message {
     private Header header;
     private String body;
 
-    public Message() {
-
-    }
+    public Message() { }
 
     /**
      * Constructor for message receiving
@@ -49,9 +47,8 @@ public class Message {
     /**
      * Converts the full message to a byte array
      * @return byte array of the converted message
-     * @throws NoSuchAlgorithmException
      */
-    private byte[] convertToBytes() throws NoSuchAlgorithmException {
+    private byte[] convertToBytes() {
         String total = header.toString() + crlf + body;
         return total.getBytes();
     }
@@ -59,10 +56,9 @@ public class Message {
     /**
      * Sends a message in byte array format
      * @param mcast_socket the multicast socket used to send the message
-     * @throws NoSuchAlgorithmException
      * @throws IOException
      */
-    public void send(MulticastSocket mcast_socket) throws NoSuchAlgorithmException, IOException {
+    public void send(MulticastSocket mcast_socket) throws IOException {
         byte[] content = this.convertToBytes();
         DatagramPacket mcast_packet = new DatagramPacket(content, content.length); //InetAddress address, int port ???
         mcast_socket.send(mcast_packet);

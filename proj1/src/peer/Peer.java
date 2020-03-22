@@ -1,27 +1,28 @@
 package peer;
 import java.io.IOException;
 import java.net.*;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class Peer {
-    private MulticastSocket mcast_control;              // multicast socket to send control messages
-    private MulticastSocket mcast_backup;               // multicast socket to backup file chunk data
-    private MulticastSocket mcast_restore;              // multicast socket to restore file chunk data
-    private String peerID;                              // identifier of the peer
-    private String protocolVersion;                     // protocol version that is being used
+    private MulticastSocket mCastControl;                   // multicast socket to send control messages
+    private MulticastSocket mCastBackup;                    // multicast socket to backup file chunk data
+    private MulticastSocket mCastRestore;                   // multicast socket to restore file chunk data
+    private String peerID;                                  // identifier of the peer
+    private String protocolVersion;                         // protocol version that is being used
 
-    private ChunkManager chunkManager;                  // chunk manager
-    private int availableDiskSpace;                     // current available disk space
+    private Protocol protocol;                              // protocol responsible for
+    private MessageHandler messageHandler;                  // dispatcher of messages received
+    private ChunkManager chunkManager;                      // chunk manager
+    private int availableDiskSpace;                         // current available disk space
 
-    private final static int TIMEOUT = 2000;            // timeout value
-    private final static String PEER_DIR = "peers/";    // constant that denotes the name of the peer directory
+    private final static int N_THREADS_PER_CHANNEL = 10;    // number of threads ready for processing packets in each channel
+    private final static int TIMEOUT = 2000;                // timeout value
+    private final static String PEER_DIR = "peers/";        // constant that denotes the name of the peer directory
+    private final static int BUFFER_SIZE_CONTROL = 500;     // buffer size for messages received in the control socket
+    private final static int BUFFER_SIZE = 64500;           // buffer size for messages received in the control socket
+
+
 
 
     /**
@@ -36,32 +37,44 @@ public class Peer {
      * @param peerID Identifier of the peer
      */
     public Peer(String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR, String protocolVersion, int peerID) throws IOException {
-        this.mcast_control = new MulticastSocket(portMC);
-        this.mcast_control.joinGroup(InetAddress.getByName(ipAddressMC));
-        this.mcast_control.setTimeToLive(1);
+        this.mCastControl = new MulticastSocket(portMC);
+        this.mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
+        this.mCastControl.setTimeToLive(1);
         System.out.println("MC channel up!");
 
-        this.mcast_backup = new MulticastSocket(portMDB);
-        this.mcast_backup.joinGroup(InetAddress.getByName(ipAddressMDB));
-        this.mcast_backup.setTimeToLive(1);
+        this.mCastBackup = new MulticastSocket(portMDB);
+        this.mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
+        this.mCastBackup.setTimeToLive(1);
         System.out.println("MDB channel up!");
 
-        this.mcast_restore = new MulticastSocket(portMDR);
-        this.mcast_restore.joinGroup(InetAddress.getByName(ipAddressMDR));
-        this.mcast_restore.setTimeToLive(1);
+        this.mCastRestore = new MulticastSocket(portMDR);
+        this.mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
+        this.mCastRestore.setTimeToLive(1);
         System.out.println("MDR channel up!");
 
         this.protocolVersion = protocolVersion;
         this.peerID = String.valueOf(peerID);
 
-        this.chunkManager = new ChunkManager();
+        this.chunkManager = new ChunkManager(String.valueOf(peerID));
         System.out.println("Started chunk manager...");
 
         this.availableDiskSpace = 6400000; // TODO: confirmar que e este o valor
 
-
+        this.initReceivingThreads();
     }
 
+    /**
+     * Method that will create and start the threads responsible for receiving and processing messages
+     */
+    private void initReceivingThreads() {
+        ReceiveThread controlThread = new ReceiveThread(this.messageHandler, this.mCastControl, BUFFER_SIZE_CONTROL, N_THREADS_PER_CHANNEL);
+        ReceiveThread backupThread = new ReceiveThread(this.messageHandler, this.mCastBackup, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+        ReceiveThread restoreThread = new ReceiveThread(this.messageHandler, this.mCastRestore, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+
+        new Thread(controlThread).start();
+        new Thread(backupThread).start();
+        new Thread(restoreThread).start();
+    }
 
     /**
      * Method that will create a directory for the peer, if it doesn't exist already
@@ -91,43 +104,23 @@ public class Peer {
      * @param replicationDeg the desired replication degree of the file's chunk (may be unused)
      */
     public int backupChunk(String version, String fileId, int chunkNo, String fileContent, int replicationDeg) {
-        List<String> replicationIDs = new ArrayList<>();
-        Message msg;
-        for (int i = 0; i < 5 && replicationIDs.size() < replicationDeg; i++) {
+        Message msg = null;
+        try {
+            msg = new Message(version, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return 0;
+        }
+
+        for (int i = 0; i < 5 && this.chunkManager.getReplicationDegree(fileId, chunkNo) < replicationDeg; i++) {
             try {
-                msg = new Message(version, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
-                msg.send(mcast_backup);
-            } catch (NoSuchAlgorithmException | IOException e) {
-                e.printStackTrace();
-                return replicationIDs.size();
-            }
-
-            try {
-                Header msgHeader = msg.getHeader();
-                int timeout = (int) (TIMEOUT * Math.pow(2, i));
-                mcast_control.setSoTimeout(timeout);
-                Message receivedMsg = new Message();
-
-                while (true) {
-                    try {
-                        receivedMsg.receiveControl(mcast_control);
-                        Header receivedMsgHeader = receivedMsg.getHeader();
-                        if(receivedMsgHeader.getMessageType() == MessageType.STORED
-                                && receivedMsgHeader.getFileId().equals(msgHeader.getFileId())
-                                && receivedMsgHeader.getChunkNo() == msgHeader.getChunkNo()
-                                && !replicationIDs.contains(receivedMsgHeader.getSenderId())) {
-
-                            replicationIDs.add(receivedMsgHeader.getSenderId());
-                            mcast_control.setSoTimeout(timeout);
-                        }
-                    } catch (Exception ignored) { }
-                }
+                msg.send(this.mCastBackup);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        return replicationIDs.size();
+        return this.chunkManager.getReplicationDegree(fileId, chunkNo);
     }
 }
 
