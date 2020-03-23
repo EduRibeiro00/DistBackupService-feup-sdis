@@ -6,11 +6,11 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-public class Client {
+public class TestApp {
     public static void main(String[] args) {
         // check arguments
         if (args.length > 4) {
-            System.err.println("Invalid number of arguments, correct usage:\njava Client <peer_ap> <sub_protocol> <opnd_1> <opnd_2>");
+            System.err.println("Invalid number of arguments, correct usage:\njava TestApp <peer_ap> <sub_protocol> <opnd_1> <opnd_2>");
             System.exit(1);
         }
 
