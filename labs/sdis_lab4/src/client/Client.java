@@ -1,5 +1,8 @@
 package client;
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.*;
 
 /**
@@ -9,7 +12,8 @@ public class Client {
     private static int TIMEOUT = 10000; // socket operation timeout (10 seconds)
     private static String host; // host address
     private static int port; // port number
-    private static DatagramSocket socket; // socket that will be used for communication
+    private static PrintWriter out; // output stream
+    private static BufferedReader in; // input stream
 
     /**
      * Main Method
@@ -17,13 +21,12 @@ public class Client {
      * @throws SocketException
      * @throws UnknownHostException
      */
-    public static void main(String[] args) throws SocketException, UnknownHostException {
+    public static void main(String[] args) throws SocketException {
         // check arguments
         if (args.length < 4) {
             System.out.println("Wrong number of arguments");
             System.exit(1);
         }
-
 
         // set variables
         host = args[0];
@@ -32,7 +35,11 @@ public class Client {
         String dnsName = args[3];
 
         // open socket
-        socket = new DatagramSocket();
+        Socket socket = new Socket(host, port);
+
+        // open streams
+        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
         // determine action
         if (oper.equals("register")) {
@@ -41,17 +48,23 @@ public class Client {
                 System.exit(1);
             }
             String ipAddress = args[4];
-            sendRegisterRequest(dnsName, ipAddress, socket);
+            sendRegisterRequest(dnsName, ipAddress);
         } else if (oper.equals("lookup")) {
-            sendLookupRequest(dnsName, socket);
+            sendLookupRequest(dnsName);
         } else {
             System.out.println("Invalid request");
             System.exit(2);
         }
 
         // receive and print response
-        String response = receiveResponse(socket);
+        String response = receiveResponse();
         System.out.println(response);
+
+        // close streams
+        out.close();
+        in.close();
+
+        // close socket
         socket.close();
     }
 
@@ -62,13 +75,10 @@ public class Client {
      * @param socket - Communication socket
      * @throws UnknownHostException
      */
-    private static void sendRegisterRequest(String dnsName, String ipAddress, DatagramSocket socket) throws UnknownHostException {
+    private static void sendRegisterRequest(String dnsName, String ipAddress) {
         String request = "register " + dnsName + " " + ipAddress;
-        byte[] buffer = request.getBytes();
-        InetAddress address = InetAddress.getByName(host);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         try {
-            socket.send(packet);
+            out.println(request);
         } catch (IOException e) {
             System.out.println("Error sending register request");
         }
@@ -80,13 +90,10 @@ public class Client {
      * @param socket - Communication socket
      * @throws UnknownHostException
      */
-    private static void sendLookupRequest(String dnsName, DatagramSocket socket) throws UnknownHostException {
+    private static void sendLookupRequest(String dnsName) {
         String request = "lookup " + dnsName;
-        byte[] buffer = request.getBytes();
-        InetAddress address = InetAddress.getByName(host);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         try {
-            socket.send(packet);
+            out.println(request);
         } catch (IOException e) {
             System.out.println("Error sending lookup request");
         }
@@ -98,17 +105,13 @@ public class Client {
      * @return A string with the response
      * @throws UnknownHostException
      */
-    private static String receiveResponse(DatagramSocket socket) throws UnknownHostException {
-        InetAddress address = InetAddress.getByName(host);
-        byte[] buffer = new byte[1024];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
+    private static String receiveResponse() {
         try {
-            socket.setSoTimeout(TIMEOUT);
-            socket.receive(packet);
+            String response = in.readLine();
         } catch (IOException e) {
             System.out.println("Error receiving response");
         }
 
-        return new String(packet.getData());
+        return response;
     }
 }
