@@ -42,23 +42,6 @@ public class ServerInitiator {
      * @param peerID Identifier of the peer
      */
     public ServerInitiator(String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR, String protocolVersion, int peerID) throws IOException {
-        this.mCastControl = new MulticastSocket(portMC);
-        this.mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
-        this.mCastControl.setTimeToLive(1);
-        System.out.println("MC channel up!");
-
-        this.mCastBackup = new MulticastSocket(portMDB);
-        this.mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
-        this.mCastBackup.setTimeToLive(1);
-        System.out.println("MDB channel up!");
-
-        this.mCastRestore = new MulticastSocket(portMDR);
-        this.mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
-        this.mCastRestore.setTimeToLive(1);
-        System.out.println("MDR channel up!");
-
-        this.protocolVersion = protocolVersion;
-        this.peerID = String.valueOf(peerID);
 
         this.chunkManager = new ChunkManager(String.valueOf(peerID));
         System.out.println("Started chunk manager...");

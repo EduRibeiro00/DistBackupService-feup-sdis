@@ -31,8 +31,7 @@ public class PeerLauncher {
 
 
         try {
-            ServerInitiator serverInitiator = new ServerInitiator(ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR, protocolVersion, peerID);
-            Peer peerLinkObj = new Peer(serverInitiator);
+            Peer peerLinkObj = new Peer(ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR, protocolVersion, peerID);
 
 
             RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(peerLinkObj, 0);
