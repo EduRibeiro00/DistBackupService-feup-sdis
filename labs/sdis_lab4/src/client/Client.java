@@ -74,7 +74,6 @@ public class Client {
      * Method that sends a register request
      * @param dnsName - DNS name to register
      * @param ipAddress - IP address to which the DNS name will be registered
-     * @param socket - Communication socket
      * @throws UnknownHostException
      */
     private static void sendRegisterRequest(String dnsName, String ipAddress) {
@@ -85,7 +84,6 @@ public class Client {
     /**
      * Method that sends a lookup request
      * @param dnsName - DNS name to register
-     * @param socket - Communication socket
      * @throws UnknownHostException
      */
     private static void sendLookupRequest(String dnsName) {
@@ -95,7 +93,6 @@ public class Client {
 
     /**
      * Method that receives a response upon a request
-     * @param socket - Communication socket
      * @return A string with the response
      * @throws UnknownHostException
      */
