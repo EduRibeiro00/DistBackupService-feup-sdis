@@ -1,4 +1,6 @@
-package peer;
+package peer.protocols;
+
+import peer.messages.Message;
 
 public class Protocol1 implements Protocol {
     private final String version = "1.0";
@@ -11,7 +13,7 @@ public class Protocol1 implements Protocol {
 
     @Override
     public void backup(Message message) {
-
+        System.out.println("Received backup call");
     }
 
     @Override

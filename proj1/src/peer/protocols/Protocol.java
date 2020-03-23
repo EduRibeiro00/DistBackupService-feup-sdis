@@ -1,4 +1,6 @@
-package peer;
+package peer.protocols;
+
+import peer.messages.Message;
 
 public interface Protocol {
 

@@ -1,4 +1,9 @@
 package peer;
+import peer.messages.Message;
+import peer.messages.MessageHandler;
+import peer.messages.MessageType;
+import peer.protocols.Protocol;
+
 import java.io.IOException;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;

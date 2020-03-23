@@ -1,5 +1,7 @@
 package peer;
 
+import peer.messages.MessageHandler;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;

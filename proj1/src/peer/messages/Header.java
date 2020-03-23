@@ -1,4 +1,4 @@
-package peer;
+package peer.messages;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
