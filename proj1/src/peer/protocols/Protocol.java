@@ -10,7 +10,7 @@ public abstract class Protocol {
     protected MulticastSocket mCastControl;  // multicast socket to send control messages
     protected MulticastSocket mCastBackup;   // multicast socket to backup file chunk data
     protected MulticastSocket mCastRestore;  // multicast socket to restore file chunk data
-    protected String peerID;                 // peer identifier
+    protected int peerID;                 // peer identifier
     protected ChunkManager chunkManager;     // chunk manager
     protected FileManager fileManager;       // current available disk space
     protected String protocolVersion;        // protocol version
@@ -21,9 +21,9 @@ public abstract class Protocol {
         this.mCastControl = mCastControl;
         this.mCastBackup = mCastBackup;
         this.mCastRestore = mCastRestore;
-        this.peerID = String.valueOf(peerID);
+        this.peerID = peerID;
         this.chunkManager = new ChunkManager(this.peerID);
-        this.fileManager = new FileManager(); // TODO: file manager
+        this.fileManager = new FileManager(this.peerID);
         this.protocolVersion = protocolVersion;
     }
 

@@ -5,9 +5,16 @@ import peer.messages.MessageHandler;
 import peer.protocols.Protocol;
 import peer.protocols.Protocol1;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Class that makes the connection between the peer and the testing client
@@ -84,9 +91,38 @@ public class Peer implements RemoteInterface {
             throw new IllegalArgumentException("Invalid arguments for backup!");
         }
 
-        // TODO
-    }
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(filepath);
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found");
+            return;
+        }
 
+        char[] fileContent = new char[64000];
+        int chunkNo = 0;
+        int maxReplication = 0;
+
+        try {
+            while (true) {
+                int charsRead;
+                if ((charsRead = fileReader.read(fileContent, 0, 64000)) == -1) {
+                    break;
+                }
+
+                int replication = this.protocol.initiateBackup(filepath, chunkNo, new String(fileContent, 0, charsRead), replicationDegree);
+                if (maxReplication > replication) {
+                    maxReplication = replication;
+                }
+
+                chunkNo++;
+            }
+        } catch (IOException e) {
+            System.err.println("Error while reading file " + filepath);
+        }
+
+        System.out.println("Replication degree achieved: " + maxReplication);
+    }
 
     /**
      * Implementation of the delete request.

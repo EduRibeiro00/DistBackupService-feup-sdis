@@ -32,10 +32,10 @@ public class ChunkManager {
 
     /**
      * Fills the ChunkManager class with the items that exist in the directory given
-     * @param directory path to directory were the peer saves his files
+     * @param peerID path to directory were the peer saves his files
      */
-    public ChunkManager(String directory) {
-        this.directory = directory;
+    public ChunkManager(int peerID) {
+        this.directory = String.valueOf(peerID);
         this.loadFromDirectory();
     }
 

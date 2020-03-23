@@ -19,6 +19,8 @@ public class MessageHandler {
             return;
         }
 
+        System.out.println("Received message: " + message.getHeader());
+
         // Dispatch message to the protocol's method
         switch (message.getHeader().getMessageType()) {
             case PUTCHUNK:

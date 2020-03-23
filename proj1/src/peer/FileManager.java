@@ -1,3 +1,5 @@
+package peer;
+
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.File;
@@ -25,36 +27,35 @@ public class FileManager {
     /**
      * The ID of the peer of which files are being managed
      */
-    private String peerId;
+    private int peerId;
 
     /**
      * 
      * @param peerId The ID of the peer of which files are going to be managed
      */
-    public FileManager(String peerId) {
+    public FileManager(int peerId) {
         this.peerId = peerId;
-        usedStorageSpace = 0;
-        createStorageDirectory();
+        this.usedStorageSpace = 0;
+        this.createDirectory("chunks");
+        this.createDirectory("files");
     }
 
     public int getUsedStorageSpace() {
-		return usedStorageSpace;
+		return this.usedStorageSpace;
 	}
 
-	/**
+    /**
      * Creates a storage directory for the current peer
-     * @param peerId The ID of the current peer
      * @return true if successful, false if otherwise
      */
-    public boolean createStorageDirectory() {
-        String path = getStorageDirectoryPath();
+    public boolean createDirectory(String dirName) {
+        String path = this.getDirectoryPath(dirName);
 
         if(Files.exists(Paths.get(path)))
             return true;
 
         File file = new File(path);
-        boolean success = file.mkdir();
-        return success;
+        return file.mkdir();
     }
 
     /**
@@ -65,6 +66,10 @@ public class FileManager {
      * @return true if successful, false if otherwise
      */
     public boolean storeChunk(String fileId, int chunkNo, String chunkContent) throws IOException {
+        if(this.isChunkStored(fileId, chunkNo)) {
+            return true;
+        }
+
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
         FileWriter chunkWriter = new FileWriter(chunk, true);
@@ -72,14 +77,14 @@ public class FileManager {
         chunkWriter.close();
 
         // log storage
-        usedStorageSpace += chunkContent.getBytes().length;
+        this.usedStorageSpace += chunkContent.getBytes().length;
 
         ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
         if(chunksForFile == null) chunksForFile = new ArrayList<>();
         chunksForFile.add(chunkNo);
         this.fileToChunks.put(fileId, chunksForFile);
 
-        return true;    //TODO: maybe add error checking
+        return true;    //TODO: add error checking
     }
 
     /**
@@ -98,8 +103,8 @@ public class FileManager {
      * Returns the path to the peer's storage directory
      * @return A string containing the path
      */
-    public String getStorageDirectoryPath() {
-        return System.getProperty("user.dir") + "/storage_" + this.peerId;
+    public String getDirectoryPath(String dirName) {
+        return System.getProperty("user.dir") + "/" + dirName + "/" + this.peerId;
     }
 
     /**
@@ -109,8 +114,12 @@ public class FileManager {
      * @return A string containing the path
      */
     public String getChunkPath(String fileId, int chunkNo) {
-        String storageDirectoryPath = getStorageDirectoryPath();
+        String storageDirectoryPath = getDirectoryPath("chunks");
         String chunkPath = storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
         return chunkPath;
+    }
+
+    private boolean isChunkStored(String fileId, int chunkNo) {
+        return this.fileToChunks.get(fileId).contains(chunkNo);
     }
 }

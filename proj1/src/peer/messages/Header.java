@@ -13,7 +13,7 @@ import java.util.List;
 public class Header {
     private String version;
     private MessageType messageType;
-    private String senderId;
+    private int senderId;
     private String fileId;
     private int chunkNo;
     private int replicationDeg;
@@ -25,19 +25,35 @@ public class Header {
      * Fills the Header class based on the elements of the header list, for message receiving
      * @param header a list of elemtns received from a peer
      */
-    public Header(List<String> header) throws Exception {
+    public Header(List<String> header) throws IllegalArgumentException {
         // No point in processing the rest if we don't know any message with header size < 4
         if(header.size() < 4 || header.size() > 6) {
-            throw new Exception("Invalid message header received");
+            throw new IllegalArgumentException("Invalid message header received");
         }
 
         this.version = header.remove(0);
         this.messageType = MessageType.valueOf(header.remove(0));
-        this.senderId = header.remove(0);
+        this.senderId = Integer.parseInt(header.remove(0));
         this.fileId = header.remove(0);
 
-        this.chunkNo = Integer.parseInt(header.remove(0));
-        this.replicationDeg = Integer.parseInt(header.remove(0));
+        switch (this.messageType) {
+            case STORED: case GETCHUNK: case CHUNK: case REMOVED:
+                if(header.size() != 1) {
+                    throw new IllegalArgumentException("Invalid message header received");
+                }
+                this.chunkNo = Integer.parseInt(header.remove(0));
+                break;
+            case PUTCHUNK:
+                if(header.size() != 2) {
+                    throw new IllegalArgumentException("Invalid message header received");
+                }
+                this.chunkNo = Integer.parseInt(header.remove(0));
+                this.replicationDeg = Integer.parseInt(header.remove(0));
+                break;
+            default:
+                break;
+        }
+
         this.other = header;
     }
 
@@ -50,12 +66,58 @@ public class Header {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
-    public Header(String version, MessageType msgType, String senderId, String fileId, int chunkNo, int repDeg) throws NoSuchAlgorithmException {
+    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg) throws NoSuchAlgorithmException {
+        if(msgType != MessageType.PUTCHUNK) {
+            throw new IllegalArgumentException("Invalid message header");
+        }
         this.version = version;
         this.messageType = msgType;
         this.senderId = senderId;
         this.chunkNo = chunkNo;
         this.replicationDeg = repDeg;
+
+        byte[] fileIdByte = getSHA256(fileId);
+        this.fileId = encodeFileId(fileIdByte);
+    }
+
+    /**
+     * Fills the Header class for message sending without repDeg
+     * @param version the version of the protocol to be used
+     * @param msgType the type of message to be sent
+     * @param senderId the ID of the message sender
+     * @param fileId the file identifier in the backup service, as the result of SHA256
+     * @param chunkNo the chunk number of the specified file (may be unsued)
+     */
+    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo) throws NoSuchAlgorithmException {
+        if(msgType == MessageType.DELETE || msgType == MessageType.PUTCHUNK) {
+            throw new IllegalArgumentException("Invalid message header");
+        }
+        this.version = version;
+        this.messageType = msgType;
+        this.senderId = senderId;
+        this.chunkNo = chunkNo;
+        this.replicationDeg = -1;
+
+        byte[] fileIdByte = getSHA256(fileId);
+        this.fileId = encodeFileId(fileIdByte);
+    }
+
+    /**
+     * Fills the Header class for message sending without chunkNo and RepDeg
+     * @param version the version of the protocol to be used
+     * @param msgType the type of message to be sent
+     * @param senderId the ID of the message sender
+     * @param fileId the file identifier in the backup service, as the result of SHA256
+     */
+    public Header(String version, MessageType msgType, int senderId, String fileId) throws Exception {
+        if(msgType != MessageType.DELETE) {
+            throw new IllegalArgumentException("Invalid message header");
+        }
+        this.version = version;
+        this.messageType = msgType;
+        this.senderId = senderId;
+        this.chunkNo = -1;
+        this.replicationDeg = -1;
 
         byte[] fileIdByte = getSHA256(fileId);
         this.fileId = encodeFileId(fileIdByte);
@@ -69,7 +131,7 @@ public class Header {
         return messageType;
     }
 
-    public String getSenderId() {
+    public int getSenderId() {
         return senderId;
     }
 
