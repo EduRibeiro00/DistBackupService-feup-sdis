@@ -1,14 +1,13 @@
 package server;
 import java.io.IOException;
 import java.net.*;
-import java.util.HashMap;
 import java.util.concurrent.*;
 
 /**
  * Server class
  */
 public class Server {
-    private static HashMap<String,String> addressTable; // dns table with pairs <name, ip_address>
+    private static ConcurrentHashMap<String,String> addressTable; // dns table with pairs <name, ip_address>
     private static int port; // port number
     private static String mcast_addr; // multicast address
     private static int mcast_port; // multicast port
