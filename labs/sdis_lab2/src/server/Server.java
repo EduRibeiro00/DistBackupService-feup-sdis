@@ -47,7 +47,7 @@ public class Server {
         }
 
         // create dns table
-        addressTable = new HashMap<>();
+        addressTable = new ConcurrentHashMap<>();
 
         // create thread pool and send periodically the server port
         ScheduledExecutorService executor = spawnBroadcastExecutor();
