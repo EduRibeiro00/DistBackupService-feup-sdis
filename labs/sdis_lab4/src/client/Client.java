@@ -21,7 +21,7 @@ public class Client {
      * @throws SocketException
      * @throws UnknownHostException
      */
-    public static void main(String[] args) throws SocketException {
+    public static void main(String[] args) throws UnknownHostException, IOException {
         // check arguments
         if (args.length < 4) {
             System.out.println("Wrong number of arguments");
@@ -38,8 +38,8 @@ public class Client {
         Socket socket = new Socket(host, port);
 
         // open streams
-        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-		BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        out = new PrintWriter(socket.getOutputStream(), true);
+		in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
         // determine action
         if (oper.equals("register")) {
@@ -79,11 +79,7 @@ public class Client {
      */
     private static void sendRegisterRequest(String dnsName, String ipAddress) {
         String request = "register " + dnsName + " " + ipAddress;
-        try {
-            out.println(request);
-        } catch (IOException e) {
-            System.out.println("Error sending register request");
-        }
+        out.println(request);
     }
 
     /**
@@ -94,11 +90,7 @@ public class Client {
      */
     private static void sendLookupRequest(String dnsName) {
         String request = "lookup " + dnsName;
-        try {
-            out.println(request);
-        } catch (IOException e) {
-            System.out.println("Error sending lookup request");
-        }
+        out.println(request);
     }
 
     /**
@@ -108,8 +100,9 @@ public class Client {
      * @throws UnknownHostException
      */
     private static String receiveResponse() {
+        String response = null;
         try {
-            String response = in.readLine();
+            response = in.readLine();
         } catch (IOException e) {
             System.out.println("Error receiving response");
         }
