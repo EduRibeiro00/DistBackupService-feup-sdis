@@ -81,17 +81,22 @@ public class Server {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
+            String requestString = in.readLine();
+            System.out.println("Received: " + requestString);
 
+            String replyString = generateReply(requestString);
+            out.println(replyString);
 
+            System.out.println("Replied: " + replyString);
+            System.out.println();
 
-            /*
-            String requestString = new String(packet.getData());
-            System.out.println("Server: " + requestString.trim());
-            String replyString = generateReply(requestString.trim());
-            sendReply(replyString, packet);
-            byte[] newBuf = new byte[512];
-            packet.setData(newBuf);
-            */
+            // close streams
+            socket.shutdownOutput();
+            while(in.readLine() != null);
+            out.close();
+            in.close();
+
+            socket.close();
         }
     }
 
@@ -147,13 +152,4 @@ public class Server {
     }
 
 
-    /**
-     * Method that sends the reply to the client
-     * @param replyString - reply string to be sent to the client
-     * @param packet - packet to send to the client
-     */
-    private static void sendReply(String replyString, DatagramPacket packet) throws IOException {
-        packet.setData(replyString.getBytes());
-        serverSocket.send(packet);
-    }
 }
