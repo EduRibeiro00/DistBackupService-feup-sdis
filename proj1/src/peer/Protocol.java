@@ -1,17 +1,21 @@
 package peer;
 
 public interface Protocol {
+
+    //Version handling
+    String getVersion();
+
     // Backup
-    void backup();
-    void stored();
+    void backup(Message message);
+    void stored(Message message);
 
     // Restore
-    void sendChunk();
-    void receiveChunk();
+    void sendChunk(Message message);
+    void receiveChunk(Message message);
 
     // Delete
-    void delete();
+    void delete(Message message);
 
     // Reclaim
-    void removed();
+    void removed(Message message);
 }

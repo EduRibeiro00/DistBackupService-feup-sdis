@@ -16,26 +16,24 @@ public class MessageHandler {
             return;
         }
 
-        Header header = message.getHeader();
-
-        switch (header.getMessageType()) {
+        // Dispatch message to the protocol's method
+        switch (message.getHeader().getMessageType()) {
             case PUTCHUNK:
-                this.protocol.backup();
+                this.protocol.backup(message);
                 break;
             case STORED:
-                this.protocol.stored();
+                this.protocol.stored(message);
                 break;
             case GETCHUNK:
-                this.protocol.sendChunk();
+                this.protocol.sendChunk(message);
                 break;
             case CHUNK:
-                this.protocol.receiveChunk();
+                this.protocol.receiveChunk(message);
                 break;
             case DELETE:
-                this.protocol.delete();
+                this.protocol.delete(message);
             case REMOVED:
-                this.protocol.removed();
+                this.protocol.removed(message);
         }
     }
-
 }
