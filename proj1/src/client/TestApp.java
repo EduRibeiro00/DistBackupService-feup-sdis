@@ -6,7 +6,14 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+/**
+ * Class that represents the client that can communicate with a peer and test its services
+ */
 public class TestApp {
+    /**
+     * Main method.
+     * @param args Command line arguments
+     */
     public static void main(String[] args) {
         // check arguments
         if (args.length > 4) {

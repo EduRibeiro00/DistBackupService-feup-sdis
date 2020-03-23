@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Class that represents a message that will be sent between peers to communicate
+ */
 public class Message {
-    private final String crlf = "\r\n";
-    private final String lastCRLF = "\r\n\r\n";
-    private Header header;
-    private String body;
+    private final String crlf = "\r\n";           /** Carriage return and line feed, to  */
+    private final String lastCRLF = "\r\n\r\n";   /** Double CRLF */
+    private Header header;                        /** Header of the message */
+    private String body;                          /** Body of the message */
+
 
     /**
      * Constructor for message receiving
@@ -28,6 +32,7 @@ public class Message {
         this.body = split[1];
     }
 
+
     /**
      * Fills the Message class for message sending
      * @param version the version of the protocol to be used
@@ -42,18 +47,20 @@ public class Message {
         this.body = body;
     }
 
+
     /**
      * Fills the Message class for message sending STORED, GETCHUNK and REMOVED messages
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
-     * @param chunkNo the chunk number of the specified file (may be unsued)
+     * @param chunkNo the chunk number of the specified file (may be unused)
      */
     public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, String body) throws Exception {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo);
         this.body = body;
     }
+
 
     /**
      * Fills the Message class for message sending STORED, GETCHUNK and REMOVED messages
@@ -68,6 +75,7 @@ public class Message {
         this.body = "";
     }
 
+
     /**
      * Fills the Message class for message sending DELETED messages
      * @param version the version of the protocol to be used
@@ -80,6 +88,7 @@ public class Message {
         this.body = "";
     }
 
+
     /**
      * Converts the full message to a byte array
      * @return byte array of the converted message
@@ -88,6 +97,7 @@ public class Message {
         String total = header.toString() + crlf + body;
         return total.getBytes();
     }
+
 
     /**
      * Sends a message in byte array format
@@ -102,10 +112,19 @@ public class Message {
         System.out.println("Sending message: " + this.header);
     }
 
+
+    /**
+     * Retrieves the header of the message.
+     */
     public Header getHeader() {
         return header;
     }
 
+
+    /**
+     * Retrieves the body of the message (if any).
+     * @return
+     */
     public String getBody() {
         return body;
     }

@@ -7,23 +7,30 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Class responsible for handling the header of a message
- * either when receiving or when sending
+ * Class responsible for handling the header of a message either when receiving or when sending
  */
 public class Header {
-    private String version;
-    private MessageType messageType;
-    private int senderId;
-    private String fileId;
-    private int chunkNo;
-    private int replicationDeg;
-    private List<String> other;
+    private String version;             /** Version of the protocol */
+    private MessageType messageType;    /** Type of the message */
+    private int senderId;               /** ID of the sender peer */
+    private String fileId;              /** ID of the file */
+    private int chunkNo;                /** Number of the chunk */
+    private int replicationDeg;         /** Replication degree */
+    private List<String> other;         /** Other fields of the header */
 
-    private static List<String> messageTypeList = Arrays.asList("PUTCHUNK", "STORED", "GETCHUNK", "CHUNK", "DELETE", "REMOVED");
+    private static List<String> messageTypeList = Arrays.asList(
+        "PUTCHUNK",
+        "STORED",
+        "GETCHUNK",
+        "CHUNK",
+        "DELETE",
+        "REMOVED"
+    ); /** Different types of messages */
+
 
     /**
      * Fills the Header class based on the elements of the header list, for message receiving
-     * @param header a list of elemtns received from a peer
+     * @param header a list of elements received from a peer
      */
     public Header(List<String> header) throws IllegalArgumentException {
         // No point in processing the rest if we don't know any message with header size < 4
@@ -123,34 +130,62 @@ public class Header {
         this.fileId = encodeFileId(fileIdByte);
     }
 
+
+    /**
+     * Retrieves the version of the message.
+     */
     public String getVersion() {
         return version;
     }
 
+
+    /**
+     * Retrieves the message type.
+     */
     public MessageType getMessageType() {
         return messageType;
     }
 
+
+    /**
+     * Retrieves the ID of the sender peer.
+     */
     public int getSenderId() {
         return senderId;
     }
 
+
+    /**
+     * Retrieves the ID of the file.
+     */
     public String getFileId() {
         return fileId;
     }
 
+
+    /**
+     * Retrieves the chunk number.
+     */
     public int getChunkNo() {
         return chunkNo;
     }
 
+
+    /**
+     * Retrieves the replication degree.
+     */
     public int getReplicationDeg() {
         return replicationDeg;
     }
 
+
+    /**
+     * Retrieves the other fields of the header (if any).
+     * @return
+     */
     public List<String> getOther() {
         return other;
     }
-
 
 
     /**
@@ -179,10 +214,11 @@ public class Header {
         return header;
     }
 
+
     /**
      * Encodes the file ID so that it can be sent in a message header
      * @param fileId the file identifier in the backup service
-     * @return the enconded file ID in a string
+     * @return the encoded file ID in a string
      */
     private String encodeFileId(byte[] fileId) {
         StringBuilder result = new StringBuilder();
@@ -193,6 +229,7 @@ public class Header {
         }
         return result.toString();
     }
+
 
     /**
      * Hashes a string using the SHA-256 cryptographic function
