@@ -1,10 +1,10 @@
 package peer;
 
 import link.RemoteInterface;
+import peer.messages.MessageHandler;
 import peer.protocols.Protocol;
 import peer.protocols.Protocol1;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.rmi.RemoteException;
@@ -13,14 +13,12 @@ import java.rmi.RemoteException;
  * Class that makes the connection between the peer and the testing client
  */
 public class Peer implements RemoteInterface {
+    private final static int N_THREADS_PER_CHANNEL = 10;    // number of threads ready for processing packets in each channel
+    private final static int BUFFER_SIZE_CONTROL = 500;     // buffer size for messages received in the control socket
+    private final static int BUFFER_SIZE = 64500;           // buffer size for messages received in the control socket
 
-    private MulticastSocket mCastControl;                   // multicast socket to send control messages
-    private MulticastSocket mCastBackup;                    // multicast socket to backup file chunk data
-    private MulticastSocket mCastRestore;                   // multicast socket to restore file chunk data
-    private String peerID;                                  // identifier of the peer
-    private String protocolVersion;                         // protocol version that is being used
+    private Protocol protocol;  // protocol responsible for the peer behaviours
 
-    private Protocol protocol;                              // protocol responsible for
 
     /**
      * Constructor of the peer
@@ -34,30 +32,43 @@ public class Peer implements RemoteInterface {
      * @param peerID Identifier of the peer
      */
     public Peer(String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR, String protocolVersion, int peerID) throws Exception {
-        this.mCastControl = new MulticastSocket(portMC);
-        this.mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
-        this.mCastControl.setTimeToLive(1);
+        MulticastSocket mCastControl = new MulticastSocket(portMC);
+        mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
+        mCastControl.setTimeToLive(1);
         System.out.println("MC channel up!");
 
-        this.mCastBackup = new MulticastSocket(portMDB);
-        this.mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
-        this.mCastBackup.setTimeToLive(1);
+        MulticastSocket mCastBackup = new MulticastSocket(portMDB);
+        mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
+        mCastBackup.setTimeToLive(1);
         System.out.println("MDB channel up!");
 
-        this.mCastRestore = new MulticastSocket(portMDR);
-        this.mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
-        this.mCastRestore.setTimeToLive(1);
+        MulticastSocket mCastRestore = new MulticastSocket(portMDR);
+        mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
+        mCastRestore.setTimeToLive(1);
         System.out.println("MDR channel up!");
 
-        this.protocolVersion = protocolVersion;
-        this.peerID = String.valueOf(peerID);
 
         switch (protocolVersion) {
             case "1.0":
-                this.protocol = new Protocol1();
+                this.protocol = new Protocol1(mCastControl, mCastBackup, mCastRestore, peerID);
+                break;
             default:
                 throw new Exception(String.format("Version %s not available", protocolVersion));
         }
+
+        System.out.println("Started protocol...");
+
+        MessageHandler messageHandler = new MessageHandler(this.protocol);
+
+        ReceiverThread controlThread = new ReceiverThread(messageHandler, mCastControl, BUFFER_SIZE_CONTROL, N_THREADS_PER_CHANNEL);
+        ReceiverThread backupThread = new ReceiverThread(messageHandler, mCastBackup, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+        ReceiverThread restoreThread = new ReceiverThread(messageHandler, mCastRestore, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+
+        new Thread(controlThread).start();
+        new Thread(backupThread).start();
+        new Thread(restoreThread).start();
+
+        System.out.println("Started all threads...");
     }
 
 

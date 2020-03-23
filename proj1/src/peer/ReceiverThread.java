@@ -9,13 +9,13 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ReceiveThread implements Runnable {
-    private MessageHandler messageHandler;          // messageHandler that will process receiving data
-    private MulticastSocket mCastSkt;               // multicast socket to receive data
-    private int bufSize;
-    private ExecutorService service;                // ExecutorService responsible for threads
+public class ReceiverThread implements Runnable {
+    private MessageHandler messageHandler;      // messageHandler that will process receiving data
+    private MulticastSocket mCastSkt;           // multicast socket to receive data
+    private int bufSize;                        // buffer size
+    private ExecutorService service;            // ExecutorService responsible for threads
 
-    public ReceiveThread(MessageHandler messageHandler, MulticastSocket mCastSkt, int bufSize, int nThreads) {
+    public ReceiverThread(MessageHandler messageHandler, MulticastSocket mCastSkt, int bufSize, int nThreads) {
         this.messageHandler = messageHandler;
         this.mCastSkt = mCastSkt;
         this.bufSize = bufSize;

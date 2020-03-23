@@ -31,10 +31,9 @@ public class PeerLauncher {
 
 
         try {
-            Peer peerLinkObj = new Peer(ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR, protocolVersion, peerID);
+            Peer peerObj = new Peer(ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR, protocolVersion, peerID);
 
-
-            RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(peerLinkObj, 0);
+            RemoteInterface remoteObject = (RemoteInterface) UnicastRemoteObject.exportObject(peerObj, 0);
             Registry rmiReg = LocateRegistry.getRegistry();
             rmiReg.bind(serviceAccessPoint, remoteObject);
         }

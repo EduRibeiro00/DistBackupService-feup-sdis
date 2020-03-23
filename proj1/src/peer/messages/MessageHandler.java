@@ -22,7 +22,7 @@ public class MessageHandler {
         // Dispatch message to the protocol's method
         switch (message.getHeader().getMessageType()) {
             case PUTCHUNK:
-                this.protocol.backup(message);
+                this.protocol.handleBackup(message);
                 break;
             case STORED:
                 this.protocol.stored(message);
@@ -35,8 +35,12 @@ public class MessageHandler {
                 break;
             case DELETE:
                 this.protocol.delete(message);
+                break;
             case REMOVED:
                 this.protocol.removed(message);
+                break;
+            default:
+                break;
         }
     }
 }
