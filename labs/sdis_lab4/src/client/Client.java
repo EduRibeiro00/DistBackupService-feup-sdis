@@ -61,6 +61,8 @@ public class Client {
         System.out.println(response);
 
         // close streams
+        socket.shutdownOutput();
+        while(in.readLine() != null);
         out.close();
         in.close();
 
