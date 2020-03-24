@@ -21,8 +21,8 @@ import java.util.List;
  */
 public class Peer implements RemoteInterface {
     private final static int N_THREADS_PER_CHANNEL = 10;    // number of threads ready for processing packets in each channel
-    private final static int BUFFER_SIZE_CONTROL = 500;     // buffer size for messages received in the control socket
-    private final static int BUFFER_SIZE = 64500;           // buffer size for messages received in the control socket
+    private final static int BUFFER_SIZE_CONTROL = 2000;     // buffer size for messages received in the control socket
+    private final static int BUFFER_SIZE = 64000;           // buffer size for messages received in the control socket
 
     private Protocol protocol;  // protocol responsible for the peer behaviours
 
@@ -39,25 +39,10 @@ public class Peer implements RemoteInterface {
      * @param peerID Identifier of the peer
      */
     public Peer(String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR, String protocolVersion, int peerID) throws Exception {
-        MulticastSocket mCastControl = new MulticastSocket(portMC);
-        mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
-        mCastControl.setTimeToLive(1);
-        System.out.println("MC channel up!");
-
-        MulticastSocket mCastBackup = new MulticastSocket(portMDB);
-        mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
-        mCastBackup.setTimeToLive(1);
-        System.out.println("MDB channel up!");
-
-        MulticastSocket mCastRestore = new MulticastSocket(portMDR);
-        mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
-        mCastRestore.setTimeToLive(1);
-        System.out.println("MDR channel up!");
-
 
         switch (protocolVersion) {
             case "1.0":
-                this.protocol = new Protocol1(mCastControl, mCastBackup, mCastRestore, peerID);
+                this.protocol = new Protocol1(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
                 break;
             default:
                 throw new Exception(String.format("Version %s not available", protocolVersion));
@@ -67,9 +52,9 @@ public class Peer implements RemoteInterface {
 
         MessageHandler messageHandler = new MessageHandler(this.protocol);
 
-        ReceiverThread controlThread = new ReceiverThread(messageHandler, mCastControl, BUFFER_SIZE_CONTROL, N_THREADS_PER_CHANNEL);
-        ReceiverThread backupThread = new ReceiverThread(messageHandler, mCastBackup, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
-        ReceiverThread restoreThread = new ReceiverThread(messageHandler, mCastRestore, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+        ReceiverThread controlThread = new ReceiverThread(messageHandler, this.protocol.getMCastControl(), BUFFER_SIZE_CONTROL, N_THREADS_PER_CHANNEL);
+        ReceiverThread backupThread = new ReceiverThread(messageHandler, this.protocol.getMCastBackup(), BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+        ReceiverThread restoreThread = new ReceiverThread(messageHandler, this.protocol.getMCastRestore(), BUFFER_SIZE, N_THREADS_PER_CHANNEL);
 
         new Thread(controlThread).start();
         new Thread(backupThread).start();

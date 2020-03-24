@@ -11,8 +11,8 @@ import java.util.Random;
 
 public class Protocol1 extends Protocol {
 
-    public Protocol1(MulticastSocket mCastControl, MulticastSocket mCastBackup, MulticastSocket mCastRestore, int peerID) {
-        super(mCastControl, mCastBackup, mCastRestore, peerID, "1.0");
+    public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) throws IOException {
+        super(peerID, "1.0", ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class Protocol1 extends Protocol {
 
         for (int i = 0; i < 5 && this.chunkManager.getReplicationDegree(fileId, chunkNo) < replicationDeg; i++) {
             try {
-                msg.send(this.mCastBackup);
+                msg.send(this.mCastBackup, this.ipAddressMDB, this.portMDB);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -65,8 +65,14 @@ public class Protocol1 extends Protocol {
                     this.peerID,
                     header.getFileId(),
                     header.getChunkNo()
-            ).send(this.mCastControl);
-        } catch (Exception ignored) { }
+            ).send(this.mCastControl, this.ipAddressMC, this.portMC);
+
+            System.out.println("Sent STORED");
+
+        } catch (Exception ignored) { 
+            ignored.printStackTrace();
+        }
+
     }
 
     @Override

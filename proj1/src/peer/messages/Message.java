@@ -1,8 +1,10 @@
 package peer.messages;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.io.IOException;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 public class Message {
@@ -17,14 +19,14 @@ public class Message {
      * @throws Exception
      */
     public Message(byte[] data) throws Exception {
-        String message = Arrays.toString(data);
+        String message = new String(data, StandardCharsets.ISO_8859_1);
         String[] split = message.split(this.lastCRLF);
 
-        if (split.length != 2){
+        if (split.length < 2){
             throw new Exception("Invalid message received");
         }
 
-        this.header = new Header(Arrays.asList(split[0].split(" ")));
+        this.header = new Header(new ArrayList<>(Arrays.asList(split[0].split(" "))));
         this.body = split[1];
     }
 
@@ -84,9 +86,9 @@ public class Message {
      * Converts the full message to a byte array
      * @return byte array of the converted message
      */
-    private byte[] convertToBytes() {
+    public byte[] convertToBytes() {
         String total = header.toString() + crlf + body;
-        return total.getBytes();
+        return total.getBytes(StandardCharsets.ISO_8859_1);
     }
 
     /**
@@ -94,9 +96,9 @@ public class Message {
      * @param mcast_socket the multicast socket used to send the message
      * @throws IOException
      */
-    public void send(MulticastSocket mcast_socket) throws IOException {
+    public void send(MulticastSocket mcast_socket, String ipAddress, int port) throws IOException {
         byte[] content = this.convertToBytes();
-        DatagramPacket mcast_packet = new DatagramPacket(content, content.length); //InetAddress address, int port ???
+        DatagramPacket mcast_packet = new DatagramPacket(content, content.length, InetAddress.getByName(ipAddress), port);
         mcast_socket.send(mcast_packet);
 
         System.out.println("Sending message: " + this.header);
