@@ -97,8 +97,7 @@ public class FileManager {
      */
     public String retrieveChunk(String fileId, int chunkNo) throws IOException {
         String chunkPath = getChunkPath(fileId, chunkNo);
-        String chunkContent = Files.readString(Paths.get(chunkPath), StandardCharsets.US_ASCII);
-        return chunkContent;
+        return Files.readString(Paths.get(chunkPath), StandardCharsets.US_ASCII);
     }
 
     /**
@@ -117,12 +116,13 @@ public class FileManager {
      */
     public String getChunkPath(String fileId, int chunkNo) {
         String storageDirectoryPath = getDirectoryPath("chunks");
-        String chunkPath = storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
-        return chunkPath;
+        return storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
     }
 
     private boolean isChunkStored(String fileId, int chunkNo) {
         ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
-        return (chunksForFile == null) ? false : chunksForFile.contains(chunkNo);
+        return (chunksForFile != null) && chunksForFile.contains(chunkNo);
     }
+
+    //TODO: save load from files
 }

@@ -89,18 +89,22 @@ public class Peer implements RemoteInterface {
         int minReplication = -1;
 
         try {
-            while (true) {
-                int charsRead;
-                if ((charsRead = fileReader.read(fileContent, 0, 64000)) == -1) {
-                    break;
-                }
+            int charsRead, lastRead = 0;
+            while ((charsRead = fileReader.read(fileContent, 0, 64000)) != -1) {
+                int replication = this.protocol.initiateBackup(filepath,
+                        chunkNo,
+                        new String(fileContent, 0, charsRead),
+                        replicationDegree);
 
-                int replication = this.protocol.initiateBackup(filepath, chunkNo, new String(fileContent, 0, charsRead), replicationDegree);
                 if (minReplication == -1 || minReplication > replication) {
                     minReplication = replication;
                 }
 
                 chunkNo++;
+                lastRead = charsRead;
+            }
+            if(lastRead == 64000) {
+                this.protocol.initiateBackup(filepath, chunkNo, "", replicationDegree);
             }
         } catch (IOException e) {
             System.err.println("Error while reading file " + filepath);
