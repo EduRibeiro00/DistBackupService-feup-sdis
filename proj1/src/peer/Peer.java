@@ -86,7 +86,7 @@ public class Peer implements RemoteInterface {
 
         char[] fileContent = new char[64000];
         int chunkNo = 0;
-        int maxReplication = 0;
+        int minReplication = -1;
 
         try {
             while (true) {
@@ -96,8 +96,8 @@ public class Peer implements RemoteInterface {
                 }
 
                 int replication = this.protocol.initiateBackup(filepath, chunkNo, new String(fileContent, 0, charsRead), replicationDegree);
-                if (maxReplication > replication) {
-                    maxReplication = replication;
+                if (minReplication == -1 || minReplication > replication) {
+                    minReplication = replication;
                 }
 
                 chunkNo++;
@@ -106,7 +106,7 @@ public class Peer implements RemoteInterface {
             System.err.println("Error while reading file " + filepath);
         }
 
-        System.out.println("Replication degree achieved: " + maxReplication);
+        System.out.println("Replication degree achieved: " + (minReplication == -1 ? 0 : minReplication));
     }
 
     /**

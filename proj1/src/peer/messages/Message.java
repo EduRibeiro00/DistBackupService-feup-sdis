@@ -22,16 +22,21 @@ public class Message {
      * @param data byte array with received data
      * @throws Exception
      */
-    public Message(byte[] data) throws Exception {
+    public Message(byte[] data) {
         String message = new String(data, StandardCharsets.ISO_8859_1);
-        String[] split = message.split(this.lastCRLF);
+        ArrayList<String> split = new ArrayList<>(Arrays.asList(message.split(this.lastCRLF)));
 
-        if (split.length < 2){
-            throw new Exception("Invalid message received");
+        this.header = new Header(new ArrayList<>(Arrays.asList(split.remove(0).split(" "))));
+
+        if (split.size() == 0) {
+            this.body = "";
+        } else {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (String string: split) {
+                stringBuilder.append(string);
+            }
+            this.body = stringBuilder.toString();
         }
-
-        this.header = new Header(new ArrayList<>(Arrays.asList(split[0].split(" "))));
-        this.body = split[1];
     }
 
 

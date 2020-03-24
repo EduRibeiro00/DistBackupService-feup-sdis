@@ -74,7 +74,7 @@ public class FileManager {
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
         chunk.createNewFile();
-        FileWriter chunkWriter = new FileWriter(chunk, true);
+        FileWriter chunkWriter = new FileWriter(chunk);
         chunkWriter.write(chunkContent);
         chunkWriter.close();
 

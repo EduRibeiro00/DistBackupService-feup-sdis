@@ -84,8 +84,7 @@ public class Header {
         this.chunkNo = chunkNo;
         this.replicationDeg = repDeg;
 
-        byte[] fileIdByte = getSHA256(fileId);
-        this.fileId = encodeFileId(fileIdByte);
+        this.fileId = fileId;
     }
 
     /**
@@ -106,8 +105,7 @@ public class Header {
         this.chunkNo = chunkNo;
         this.replicationDeg = -1;
 
-        byte[] fileIdByte = getSHA256(fileId);
-        this.fileId = encodeFileId(fileIdByte);
+        this.fileId = fileId;
     }
 
     /**
@@ -127,8 +125,7 @@ public class Header {
         this.chunkNo = -1;
         this.replicationDeg = -1;
 
-        byte[] fileIdByte = getSHA256(fileId);
-        this.fileId = encodeFileId(fileIdByte);
+        this.fileId = fileId;
     }
 
 
@@ -217,11 +214,13 @@ public class Header {
 
 
     /**
-     * Encodes the file ID so that it can be sent in a message header
-     * @param fileId the file identifier in the backup service
-     * @return the encoded file ID in a string
+     * Hashes a string using the SHA-256 cryptographic function
+     * @param str the string to be hashed
+     * @return an array of bytes resultant of the hash
+     * @throws NoSuchAlgorithmException
      */
-    private String encodeFileId(byte[] fileId) {
+    public static String encodeFileId(String str) throws NoSuchAlgorithmException {
+        byte[] fileId = getSHA256(str);
         StringBuilder result = new StringBuilder();
         for(byte bt : fileId) {
             int decimal = (int) bt & 0xff;  // bytes widen to int, need mask as to prevent sign extension
@@ -238,7 +237,7 @@ public class Header {
      * @return an array of bytes resultant of the hash
      * @throws NoSuchAlgorithmException
      */
-    private byte[] getSHA256(String str) throws NoSuchAlgorithmException {
+    private static byte[] getSHA256(String str) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] encodedhash = digest.digest(str.getBytes(StandardCharsets.UTF_8));
         return encodedhash;

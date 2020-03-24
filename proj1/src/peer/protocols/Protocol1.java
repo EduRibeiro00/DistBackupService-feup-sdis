@@ -21,13 +21,15 @@ public class Protocol1 extends Protocol {
 
         Message msg;
         try {
-            msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
+            msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, Header.encodeFileId(fileId), chunkNo, replicationDeg, fileContent);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             return 0;
         }
 
-        for (int i = 0; i < 5 && this.chunkManager.getReplicationDegree(fileId, chunkNo) < replicationDeg; i++) {
+        for (int i = 0;
+                 i < 5 && this.chunkManager.getReplicationDegree(msg.getHeader().getFileId(), chunkNo) < replicationDeg;
+                 i++) {
             try {
                 msg.send(this.mCastBackup, this.ipAddressMDB, this.portMDB);
             } catch (IOException e) {
@@ -37,21 +39,21 @@ public class Protocol1 extends Protocol {
             try {
                 Thread.sleep((long) (TIMEOUT * Math.pow(2, i)));
             } catch (InterruptedException ignored) { }
+
+            System.out.println("Ending cycle, have replication degree of " + this.chunkManager.getReplicationDegree(
+                    msg.getHeader().getFileId(), chunkNo));
         }
 
-        return this.chunkManager.getReplicationDegree(fileId, chunkNo);
+        return this.chunkManager.getReplicationDegree(msg.getHeader().getFileId(), chunkNo);
     }
 
 
     @Override
     public void handleBackup(Message message) {
-        System.out.println("Received BACKUP call");
-
         Header header = message.getHeader();
 
         if(header.getSenderId() == this.peerID) {
-//            return;
-            System.out.println("Received from myself");
+            return;
         }
 
         try {
@@ -66,10 +68,7 @@ public class Protocol1 extends Protocol {
                     header.getFileId(),
                     header.getChunkNo()
             ).send(this.mCastControl, this.ipAddressMC, this.portMC);
-
-            System.out.println("Sent STORED");
-
-        } catch (Exception ignored) { 
+        } catch (Exception ignored) {
             ignored.printStackTrace();
         }
 
@@ -77,8 +76,6 @@ public class Protocol1 extends Protocol {
 
     @Override
     public void stored(Message message) {
-        System.out.println("Received STORED message");
-
         Header header = message.getHeader();
 
         this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), header.getSenderId());
@@ -86,8 +83,6 @@ public class Protocol1 extends Protocol {
 
     @Override
     public void sendChunk(Message message) {
-        System.out.println("Received GETCHUNK message");
-
     }
 
     @Override
