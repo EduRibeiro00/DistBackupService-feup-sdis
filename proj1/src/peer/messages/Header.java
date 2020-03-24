@@ -5,6 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Class responsible for handling the header of a message either when receiving or when sending
@@ -32,7 +33,7 @@ public class Header {
      * Fills the Header class based on the elements of the header list, for message receiving
      * @param header a list of elements received from a peer
      */
-    public Header(List<String> header) throws IllegalArgumentException {
+    public Header(ArrayList<String> header) throws IllegalArgumentException {
         // No point in processing the rest if we don't know any message with header size < 4
         if(header.size() < 4 || header.size() > 6) {
             throw new IllegalArgumentException("Invalid message header received");

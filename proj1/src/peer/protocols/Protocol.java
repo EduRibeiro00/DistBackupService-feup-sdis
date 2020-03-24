@@ -4,7 +4,9 @@ import peer.ChunkManager;
 import peer.FileManager;
 import peer.messages.Message;
 
-import java.net.MulticastSocket;
+import java.net.*;
+import java.io.IOException;
+
 
 public abstract class Protocol {
     protected MulticastSocket mCastControl;  // multicast socket to send control messages
@@ -15,12 +17,41 @@ public abstract class Protocol {
     protected FileManager fileManager;       // current available disk space
     protected String protocolVersion;        // protocol version
 
+    protected String ipAddressMC;
+    protected int portMC;
+    protected String ipAddressMDB; 
+    protected int portMDB; 
+    protected String ipAddressMDR; 
+    protected int portMDR;
 
-    public Protocol(MulticastSocket mCastControl, MulticastSocket mCastBackup,
-                    MulticastSocket mCastRestore, int peerID, String protocolVersion) {
-        this.mCastControl = mCastControl;
-        this.mCastBackup = mCastBackup;
-        this.mCastRestore = mCastRestore;
+
+    public Protocol(int peerID, String protocolVersion, 
+                    String ipAddressMC, int portMC, 
+                    String ipAddressMDB, int portMDB, 
+                    String ipAddressMDR, int portMDR) throws IOException {
+
+        this.mCastControl = new MulticastSocket(portMC);
+        this.mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
+        this.mCastControl.setTimeToLive(1);
+        System.out.println("MC channel up!");
+
+        this.mCastBackup = new MulticastSocket(portMDB);
+        this.mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
+        this.mCastBackup.setTimeToLive(1);
+        System.out.println("MDB channel up!");
+
+        this.mCastRestore = new MulticastSocket(portMDR);
+        this.mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
+        this.mCastRestore.setTimeToLive(1);
+        System.out.println("MDR channel up!");
+
+        this.ipAddressMC = ipAddressMC;
+        this.portMC = portMC;
+        this.ipAddressMDB = ipAddressMDB;
+        this.portMDB = portMDB;
+        this.ipAddressMDR = ipAddressMDR;
+        this.portMDR = portMDR;
+
         this.peerID = peerID;
         this.chunkManager = new ChunkManager(this.peerID);
         this.fileManager = new FileManager(this.peerID);
@@ -46,4 +77,16 @@ public abstract class Protocol {
 
     // Reclaim
     public abstract void removed(Message message);
+
+    public MulticastSocket getMCastControl() {
+        return mCastControl;
+    }
+
+    public MulticastSocket getMCastBackup() {
+        return mCastBackup;
+    }
+    
+    public MulticastSocket getMCastRestore() {
+        return mCastRestore;
+    }    
 }

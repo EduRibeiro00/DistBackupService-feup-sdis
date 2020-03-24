@@ -38,6 +38,7 @@ public class FileManager {
         this.usedStorageSpace = 0;
         this.createDirectory("chunks");
         this.createDirectory("files");
+        this.fileToChunks = new ConcurrentHashMap<>();
     }
 
     public int getUsedStorageSpace() {
@@ -72,6 +73,7 @@ public class FileManager {
 
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
+        chunk.createNewFile();
         FileWriter chunkWriter = new FileWriter(chunk, true);
         chunkWriter.write(chunkContent);
         chunkWriter.close();
@@ -104,7 +106,7 @@ public class FileManager {
      * @return A string containing the path
      */
     public String getDirectoryPath(String dirName) {
-        return System.getProperty("user.dir") + "/" + dirName + "/" + this.peerId;
+        return System.getProperty("user.dir") + "/peer/" + dirName + "/" + this.peerId;
     }
 
     /**
@@ -120,6 +122,7 @@ public class FileManager {
     }
 
     private boolean isChunkStored(String fileId, int chunkNo) {
-        return this.fileToChunks.get(fileId).contains(chunkNo);
+        ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
+        return (chunksForFile == null) ? false : chunksForFile.contains(chunkNo);
     }
 }
