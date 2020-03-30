@@ -104,12 +104,12 @@ public class Protocol1 extends Protocol {
         for (Integer chunk : chunks) {
             try {
                 this.fileManager.removeChunk(header.getFileId(), chunk);
-                this.chunkManager.removeChunk(header.getFileId(), chunk);
+                this.chunkManager.removeChunkReplication(header.getFileId(), chunk, this.peerID);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            //Message response = new Message();
+            //Message response = new Message(); // enhancement
         }
 
         this.chunkManager.removeFile(header.getFileId());

@@ -21,7 +21,7 @@ public class FileManager {
      * value = array with ChunkNo
      */
     private ConcurrentHashMap<String, ArrayList<Integer>> fileToChunks;
-    
+
     /**
      * Stores the storage space used so far
      */
@@ -139,6 +139,10 @@ public class FileManager {
     public void removeChunk(String fileId, int chunkNo) throws IOException {
         String chunkPath = getChunkPath(fileId, chunkNo);
         Files.deleteIfExists(Paths.get(chunkPath));
+    }
+
+    public void removeFile(String fileId) {
+        this.fileToChunks.remove(fileId);
     }
 
     //TODO: save load from files
