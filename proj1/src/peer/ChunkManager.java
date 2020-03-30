@@ -1,19 +1,13 @@
 package peer;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ChunkManager {
     private final static String filesInfo = "files_info.json";
     private final static String replicationInfo = "replication_info.json";
     private final String directory; // Directory assigned to the peer
-
-    /**
-     * Stores the chunks of each file this peer has in his directory
-     * key = fileId
-     * value = array with ChunkNo
-     */
-    private ConcurrentHashMap<String, ArrayList<Integer>> chunksTable;
 
     /**
      * Stores the desired replication degree for each file
@@ -68,38 +62,28 @@ public class ChunkManager {
     }
 
     /**
-     * Checks if the chunk of the file has already been stored in this peer
-     * @param fileId of the file to be stored
-     * @param chunkNo number of the chunk of the file
-     * @return true if this peer has already stored the chunk
+     *
+     * @param fileId
+     * @param chunkNo
+     * @return replication degree of chunkNo of fileID
      */
-    public boolean isChunkStored(String fileId, int chunkNo) {
-        return this.chunksTable.get(fileId).contains(chunkNo);
-    }
-
-    /**
-     * Updates the chunksTable to contain the new chunk that was stored
-     * @param fileId file ID of the file that was stored
-     * @param chunkNo chunk number of the file that was store
-     * @param myId this peer current ID
-     */
-    public void storeChunk(String fileId, int chunkNo, int myId) {
-        ArrayList<Integer> storedChunks = this.chunksTable.get(fileId);
-
-        if(storedChunks == null) {
-            storedChunks = new ArrayList<>();
-        }
-
-        storedChunks.add(chunkNo);
-
-        this.chunksTable.put(fileId, storedChunks);
-        this.addChunkReplication(fileId, chunkNo, myId);
-    }
-
     public int getReplicationDegree(String fileId, int chunkNo) {
         ArrayList<Integer> senders = this.perceivedReplicationTable.get(fileId + "_" + chunkNo);
 
         return senders == null ? 0 : senders.size();
+    }
+
+    public void removeChunkReplication(String fileId, int chunk, int peerID) {
+        String key = fileId + "_" + chunk;
+
+        List<Integer> peers = this.perceivedReplicationTable.get(key);
+
+        if(peers != null) {
+            peers.removeIf(elem -> elem == peerID);
+            if(peers.size() == 0){
+                this.perceivedReplicationTable.remove(key);
+            }
+        }
     }
 
     // TODO: save and load from files
@@ -108,7 +92,6 @@ public class ChunkManager {
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
     private void loadFromDirectory() {
-        this.chunksTable = new ConcurrentHashMap<>();
         this.desiredReplicationTable = new ConcurrentHashMap<>();
         this.perceivedReplicationTable = new ConcurrentHashMap<>();
 
