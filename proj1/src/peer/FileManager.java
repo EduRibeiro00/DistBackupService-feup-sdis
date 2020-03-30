@@ -73,8 +73,9 @@ public class FileManager {
         }
 
         // log storage
-        if (this.availableStorageSpace < chunkContent.getBytes().length)
+        if (this.availableStorageSpace < chunkContent.getBytes().length) {
             return false;
+        }
 
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
