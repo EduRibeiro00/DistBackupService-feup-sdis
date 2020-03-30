@@ -4,6 +4,7 @@ import peer.messages.MessageHandler;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
@@ -15,9 +16,13 @@ public class ReceiverThread implements Runnable {
     private int bufSize;                        // buffer size
     private ExecutorService service;            // ExecutorService responsible for threads
 
-    public ReceiverThread(MessageHandler messageHandler, MulticastSocket mCastSkt, int bufSize, int nThreads) {
+    public ReceiverThread(MessageHandler messageHandler, String ipAddress, int port,int bufSize, int nThreads) throws IOException {
         this.messageHandler = messageHandler;
-        this.mCastSkt = mCastSkt;
+
+        this.mCastSkt = new MulticastSocket(port);
+        this.mCastSkt.joinGroup(InetAddress.getByName(ipAddress));
+        this.mCastSkt.setTimeToLive(1);
+
         this.bufSize = bufSize;
         this.service = Executors.newFixedThreadPool(nThreads);
     }

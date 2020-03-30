@@ -6,9 +6,9 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-//java client.TestApp 1234 BACKUP peer/files/a4v6.drawio 1
-//java peer.PeerLauncher 1.0 1234 1234 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
-//java peer.PeerLauncher 1.0 5678 5678 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java client.TestApp 1234 BACKUP peer/files/ola.txt 1
+// java peer.PeerLauncher 1.0 1234 1234 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.0 5678 5678 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
 
 
 /**

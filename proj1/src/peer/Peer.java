@@ -52,9 +52,9 @@ public class Peer implements RemoteInterface {
 
         MessageHandler messageHandler = new MessageHandler(this.protocol);
 
-        ReceiverThread controlThread = new ReceiverThread(messageHandler, this.protocol.getMCastControl(), BUFFER_SIZE_CONTROL, N_THREADS_PER_CHANNEL);
-        ReceiverThread backupThread = new ReceiverThread(messageHandler, this.protocol.getMCastBackup(), BUFFER_SIZE, N_THREADS_PER_CHANNEL);
-        ReceiverThread restoreThread = new ReceiverThread(messageHandler, this.protocol.getMCastRestore(), BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+        ReceiverThread controlThread = new ReceiverThread(messageHandler, ipAddressMC, portMC, BUFFER_SIZE_CONTROL, N_THREADS_PER_CHANNEL);
+        ReceiverThread backupThread = new ReceiverThread(messageHandler, ipAddressMDB, portMDB,BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+        ReceiverThread restoreThread = new ReceiverThread(messageHandler, ipAddressMDR, portMDR, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
 
         new Thread(controlThread).start();
         new Thread(backupThread).start();
