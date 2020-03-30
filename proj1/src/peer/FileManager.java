@@ -137,8 +137,17 @@ public class FileManager {
     }
 
     public void removeChunk(String fileId, int chunkNo) throws IOException {
-        String chunkPath = getChunkPath(fileId, chunkNo);
-        Files.deleteIfExists(Paths.get(chunkPath));
+        if (this.isChunkStored(fileId, chunkNo)) {
+            String chunkPath = getChunkPath(fileId, chunkNo);
+            Files.deleteIfExists(Paths.get(chunkPath));
+
+            List<Integer> chunks = this.fileToChunks.get(fileId);
+            chunks.removeIf(elem -> elem == chunkNo);
+
+            if (chunks.size() == 0) {
+                this.fileToChunks.remove(fileId);
+            }
+        }
     }
 
     public void removeFile(String fileId) {
