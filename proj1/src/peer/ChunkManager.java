@@ -96,7 +96,7 @@ public class ChunkManager {
 
         return senders == null ? 0 : senders.size();
     }
-    
+
     /**
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
@@ -116,7 +116,7 @@ public class ChunkManager {
 
         // Loading perceived replication table
         try {
-            FileInputStream percRepFileIn = new FileInputStream("./chunks/" + directory + "/" + perceivedReplicationTable);
+            FileInputStream percRepFileIn = new FileInputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
             ObjectInputStream percRepObjIn = new ObjectInputStream(percRepFileIn);
             this.perceivedReplicationTable = (ConcurrentHashMap<String, ArrayList<Integer>>)percRepObjIn.readObject();
             percRepFileIn.close();
@@ -141,7 +141,7 @@ public class ChunkManager {
         desRepFileOut.close();
 
         // Saving perceived replication table
-        FileOutputStream percRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + perceivedReplicationTable);
+        FileOutputStream percRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
         ObjectOutputStream percRepObjOut = new ObjectOutputStream(percRepFileOut);
         percRepObjOut.writeObject(desiredReplicationTable);
         percRepObjOut.close();
