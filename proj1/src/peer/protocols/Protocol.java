@@ -9,6 +9,7 @@ import java.io.IOException;
 
 
 public abstract class Protocol {
+    protected final int TIMEOUT = 1000;
     protected int peerID;                 // peer identifier
     protected ChunkManager chunkManager;     // chunk manager
     protected FileManager fileManager;       // current available disk space
@@ -45,8 +46,13 @@ public abstract class Protocol {
         return this.protocolVersion;
     }
 
+    //Peer Id
+    public int getPeerID() {
+        return this.peerID;
+    }
+
     // Backup
-    public abstract int initiateBackup(String fileId, int chunkNo, String fileContent, int replicationDeg);
+    public abstract int initiateBackup(String filePath, int chunkNo, String fileContent, int replicationDeg);
     public abstract void handleBackup(Message message);
     public abstract void stored(Message message);
 
@@ -55,6 +61,7 @@ public abstract class Protocol {
     public abstract void receiveChunk(Message message);
 
     // Delete
+    public abstract void initiateDelete(String filePath);
     public abstract void delete(Message message);
 
     // Reclaim

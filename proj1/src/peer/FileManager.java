@@ -1,6 +1,7 @@
 package peer;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.File;
 import java.io.FileWriter;
@@ -15,10 +16,18 @@ import java.nio.charset.*;
 public class FileManager {
 
     /**
-     * Stores the chunk numbers stored for each file
+     * Stores the chunks of each file this peer has in his directory
+     * key = fileId
+     * value = array with ChunkNo
      */
     private ConcurrentHashMap<String, ArrayList<Integer>> fileToChunks;
 
+    /**
+     * Stores the highest chunk number of each file received and sent
+     * key = fileId
+     * value = highest chunk number perceived
+     */
+    private ConcurrentHashMap<String, Integer> highestChunks;
 
     /**
      * Stores the storage space used so far
@@ -40,6 +49,7 @@ public class FileManager {
         this.createDirectory("chunks");
         this.createDirectory("files");
         this.fileToChunks = new ConcurrentHashMap<>();
+        this.highestChunks = new ConcurrentHashMap<>();
     }
 
     public int getAvailableStorageSpace() {
@@ -77,6 +87,8 @@ public class FileManager {
             return false;
         }
 
+        this.addChunkStored(fileId, chunkNo);
+
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
         chunk.createNewFile();
@@ -86,10 +98,7 @@ public class FileManager {
 
         this.availableStorageSpace -= chunkContent.getBytes().length;
 
-        ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
-        if(chunksForFile == null) chunksForFile = new ArrayList<>();
-        chunksForFile.add(chunkNo);
-        this.fileToChunks.put(fileId, chunksForFile);
+        this.setMaxChunkNo(fileId, chunkNo);
 
         return true;    //TODO: add error checking
     }
@@ -124,9 +133,63 @@ public class FileManager {
         return storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
     }
 
+    public void setMaxChunkNo(String fileId, int chunkNo) {
+        this.highestChunks.compute(fileId, (key, value) -> (value == null || chunkNo > value) ? chunkNo : value);
+    }
+
+    public int getMaxChunkNo(String fileId) {
+        return this.highestChunks.getOrDefault(fileId, -1);
+    }
+
+    public void deleteMaxChunkNo(String fileId) {
+        this.highestChunks.remove(fileId);
+    }
+
+    public List<Integer> getFileChunks(String fileId) {
+        return this.fileToChunks.get(fileId);
+    }
+
+    public boolean removeChunk(String fileId, int chunkNo) throws IOException {
+        if (!this.removeChunkStored(fileId, chunkNo)) {
+            return false;
+        }
+
+        String chunkPath = getChunkPath(fileId, chunkNo);
+        Files.deleteIfExists(Paths.get(chunkPath));
+
+        List<Integer> chunks = this.fileToChunks.get(fileId);
+        chunks.removeIf(elem -> elem.equals(chunkNo));
+
+        System.out.println(chunks.size());
+
+        if (chunks.size() == 0) {
+            this.fileToChunks.remove(fileId);
+        }
+        return true;
+    }
+
+    public void removeFile(String fileId) {
+        this.fileToChunks.remove(fileId);
+        this.highestChunks.remove(fileId);
+    }
+
+    private void addChunkStored(String fileId, int chunkNo) {
+        List<Integer> chunks = this.fileToChunks.computeIfAbsent(fileId, value -> new ArrayList<>());
+        if (chunks.contains(chunkNo)) {
+            return;
+        }
+
+        chunks.add(chunkNo);
+    }
+
+    private boolean removeChunkStored(String fileId, int chunkNo) {
+        List<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ArrayList<>());
+        return chunks.removeIf(elem -> elem == chunkNo);
+    }
+
     private boolean isChunkStored(String fileId, int chunkNo) {
-        ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
-        return (chunksForFile != null) && chunksForFile.contains(chunkNo);
+        List<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ArrayList<>());
+        return chunks.contains(chunkNo);
     }
 
     //TODO: save load from files

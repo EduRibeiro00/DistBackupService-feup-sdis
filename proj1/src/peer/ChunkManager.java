@@ -1,19 +1,15 @@
 package peer;
 
+import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ChunkManager {
-    private final static String filesInfo = "files_info.json";
-    private final static String replicationInfo = "replication_info.json";
-    private final String directory; // Directory assigned to the peer
 
-    /**
-     * Stores the chunks of each file this peer has in his directory
-     * key = fileId
-     * value = array with ChunkNo
-     */
-    private ConcurrentHashMap<String, ArrayList<Integer>> chunksTable;
+public class ChunkManager {
+    private final static String desiredReplicationInfo = "desired_replication_info.json";
+    private final static String perceivedReplicationInfo = "perceived_replication_info.json";
+    private final String directory; // Directory assigned to the peer
 
     /**
      * Stores the desired replication degree for each file
@@ -46,15 +42,12 @@ public class ChunkManager {
      * @param senderId of STORED message received
      */
     public void addChunkReplication(String fileId, int chunkNo, int senderId) {
-        ArrayList<Integer> senders = this.perceivedReplicationTable.get(fileId + "_" + chunkNo);
+        String key = fileId + "_" + chunkNo;
+        ArrayList<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ArrayList<>());
 
-        if(senders == null) {
-            senders = new ArrayList<>(senderId);
-            this.perceivedReplicationTable.put(fileId + "_" + chunkNo, senders);
-
-        } else if(!senders.contains(senderId)){
+        if(!senders.contains(senderId)){
             senders.add(senderId);
-            this.perceivedReplicationTable.put(fileId + "_" + chunkNo, senders);
+            saveToDirectory(); //TODO: divide in two
         }
     }
 
@@ -63,61 +56,90 @@ public class ChunkManager {
      * @param fileId of the file sent by the peer
      * @param desiredRepDegree the new replicationDegree
      */
-    public void addDesiredReplication(String fileId, int desiredRepDegree) {
+    public void setDesiredReplication(String fileId, int desiredRepDegree) {
         this.desiredReplicationTable.put(fileId, desiredRepDegree);
+        saveToDirectory(); //TODO: divide in two
     }
 
     /**
-     * Checks if the chunk of the file has already been stored in this peer
-     * @param fileId of the file to be stored
-     * @param chunkNo number of the chunk of the file
-     * @return true if this peer has already stored the chunk
+     *
+     * @param fileId
+     * @param chunkNo
+     * @return replication degree of chunkNo of fileID
      */
-    public boolean isChunkStored(String fileId, int chunkNo) {
-        return this.chunksTable.get(fileId).contains(chunkNo);
+    public int getPerceivedReplication(String fileId, int chunkNo) {
+        return this.perceivedReplicationTable.getOrDefault(fileId + "_" + chunkNo, new ArrayList<>()).size();
     }
 
-    /**
-     * Updates the chunksTable to contain the new chunk that was stored
-     * @param fileId file ID of the file that was stored
-     * @param chunkNo chunk number of the file that was store
-     * @param myId this peer current ID
-     */
-    public void storeChunk(String fileId, int chunkNo, int myId) {
-        ArrayList<Integer> storedChunks = this.chunksTable.get(fileId);
+    public void deletePerceivedReplication(String fileId, int chunk) {
+        String key = fileId + "_" + chunk;
 
-        if(storedChunks == null) {
-            storedChunks = new ArrayList<>();
+        if(this.perceivedReplicationTable.remove(key) != null){
+            saveToDirectory(); //TODO: divide in two
         }
-
-        storedChunks.add(chunkNo);
-
-        this.chunksTable.put(fileId, storedChunks);
-        this.addChunkReplication(fileId, chunkNo, myId);
     }
 
-    public int getReplicationDegree(String fileId, int chunkNo) {
-        ArrayList<Integer> senders = this.perceivedReplicationTable.get(fileId + "_" + chunkNo);
-
-        return senders == null ? 0 : senders.size();
+    public int getDesiredReplication(String fileId) {
+        return this.desiredReplicationTable.getOrDefault(fileId, -1);
     }
 
-    // TODO: save and load from files
+    public void deleteDesiredReplication(String fileId) {
+        this.desiredReplicationTable.remove(fileId);
+    }
 
     /**
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
     private void loadFromDirectory() {
-        this.chunksTable = new ConcurrentHashMap<>();
-        this.desiredReplicationTable = new ConcurrentHashMap<>();
-        this.perceivedReplicationTable = new ConcurrentHashMap<>();
+        // Loading desired replication table
+        try {
+            FileInputStream desRepFileIn = new FileInputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
+            ObjectInputStream desRepObjIn = new ObjectInputStream(desRepFileIn);
+            this.desiredReplicationTable = (ConcurrentHashMap<String, Integer>) desRepObjIn.readObject();
+            desRepFileIn.close();
+            desRepObjIn.close();
+        } catch (Exception e) {
+            this.desiredReplicationTable = new ConcurrentHashMap<>();
+        }
 
+        // Loading perceived replication table
+        try {
+            FileInputStream percRepFileIn = new FileInputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
+            ObjectInputStream percRepObjIn = new ObjectInputStream(percRepFileIn);
+            this.perceivedReplicationTable = (ConcurrentHashMap<String, ArrayList<Integer>>)percRepObjIn.readObject();
+            percRepFileIn.close();
+            percRepObjIn.close();
+        } catch (Exception e) {
+            this.perceivedReplicationTable = new ConcurrentHashMap<>();
+        }
     }
 
     /**
      * Writes to files in the directory to save the information present on the tables
      */
-    private void saveToDirectory() {
+    synchronized private void saveToDirectory() {
 
+        // Saving desired replication table
+        try {
+            FileOutputStream desRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
+            ObjectOutputStream desRepObjOut = new ObjectOutputStream(desRepFileOut);
+            desRepObjOut.writeObject(desiredReplicationTable);
+            desRepObjOut.close();
+            desRepFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+
+        // Saving perceived replication table
+        try {
+            FileOutputStream percRepFileOut = null;
+            percRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
+            ObjectOutputStream percRepObjOut = new ObjectOutputStream(percRepFileOut);
+            percRepObjOut.writeObject(perceivedReplicationTable);
+            percRepObjOut.close();
+            percRepFileOut.close();
+        } catch (Exception ignore) {
+
+        }
     }
 }

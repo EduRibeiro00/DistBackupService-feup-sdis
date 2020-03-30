@@ -74,7 +74,7 @@ public class Header {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
-    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg) throws NoSuchAlgorithmException {
+    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg) throws IllegalArgumentException {
         if(msgType != MessageType.PUTCHUNK) {
             throw new IllegalArgumentException("Invalid message header");
         }
@@ -95,7 +95,7 @@ public class Header {
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
      */
-    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo) throws NoSuchAlgorithmException {
+    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo) throws IllegalArgumentException {
         if(msgType == MessageType.DELETE || msgType == MessageType.PUTCHUNK) {
             throw new IllegalArgumentException("Invalid message header");
         }
@@ -115,7 +115,7 @@ public class Header {
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      */
-    public Header(String version, MessageType msgType, int senderId, String fileId) throws Exception {
+    public Header(String version, MessageType msgType, int senderId, String fileId) throws IllegalArgumentException {
         if(msgType != MessageType.DELETE) {
             throw new IllegalArgumentException("Invalid message header");
         }

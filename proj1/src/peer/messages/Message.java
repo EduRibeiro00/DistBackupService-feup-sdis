@@ -41,7 +41,7 @@ public class Message {
 
 
     /**
-     * Fills the Message class for message sending
+     * Fills the Message class for sending PUTCHUNK
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -49,35 +49,35 @@ public class Message {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
-    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg, String body) throws NoSuchAlgorithmException {
+    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg, String body) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo, repDeg);
         this.body = body;
     }
 
 
     /**
-     * Fills the Message class for message sending STORED, GETCHUNK and REMOVED messages
+     * Fills the Message class for message sending STORED, GETCHUNK messages
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unused)
      */
-    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, String body) throws Exception {
+    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, String body) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo);
         this.body = body;
     }
 
 
     /**
-     * Fills the Message class for message sending STORED, GETCHUNK and REMOVED messages
+     * Fills the Message class for message sending REMOVED messages
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
      */
-    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo) throws Exception {
+    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo);
         this.body = "";
     }
@@ -90,7 +90,7 @@ public class Message {
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      */
-    public Message(String version, MessageType msgType, int senderId, String fileId) throws Exception {
+    public Message(String version, MessageType msgType, int senderId, String fileId) {
         this.header = new Header(version, msgType, senderId, fileId);
         this.body = "";
     }
