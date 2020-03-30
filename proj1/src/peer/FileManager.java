@@ -18,8 +18,7 @@ public class FileManager {
      * Stores the chunk numbers stored for each file
      */
     private ConcurrentHashMap<String, ArrayList<Integer>> fileToChunks;
-
-
+    
     /**
      * Stores the storage space used so far
      */
