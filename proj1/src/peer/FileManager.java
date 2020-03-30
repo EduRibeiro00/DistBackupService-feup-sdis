@@ -1,6 +1,7 @@
 package peer;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.File;
 import java.io.FileWriter;
@@ -15,7 +16,9 @@ import java.nio.charset.*;
 public class FileManager {
 
     /**
-     * Stores the chunk numbers stored for each file
+     * Stores the chunks of each file this peer has in his directory
+     * key = fileId
+     * value = array with ChunkNo
      */
     private ConcurrentHashMap<String, ArrayList<Integer>> fileToChunks;
 
@@ -87,6 +90,7 @@ public class FileManager {
         this.availableStorageSpace -= chunkContent.getBytes().length;
 
         ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
+
         if(chunksForFile == null) chunksForFile = new ArrayList<>();
         chunksForFile.add(chunkNo);
         this.fileToChunks.put(fileId, chunksForFile);
@@ -127,6 +131,15 @@ public class FileManager {
     private boolean isChunkStored(String fileId, int chunkNo) {
         ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
         return (chunksForFile != null) && chunksForFile.contains(chunkNo);
+    }
+
+    public List<Integer> getFileChunks(String fileId) {
+        return this.fileToChunks.get(fileId);
+    }
+
+    public void removeChunk(String fileId, int chunkNo) throws IOException {
+        String chunkPath = getChunkPath(fileId, chunkNo);
+        Files.deleteIfExists(Paths.get(chunkPath));
     }
 
     //TODO: save load from files
