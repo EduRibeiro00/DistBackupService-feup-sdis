@@ -147,4 +147,19 @@ public class ChunkManager {
         }
 
     }
+
+    public void removeChunkReplication(String fileId, int chunk, int peerID) {
+        String key = fileId + "_" + chunk;
+
+        List<Integer> peers = this.perceivedReplicationTable.get(key);
+
+        if(peers != null) {
+            peers.removeIf(elem -> elem == peerID);
+            if(peers.size() == 0){
+                this.perceivedReplicationTable.remove(key);
+            }
+        }
+
+
+    }
 }
