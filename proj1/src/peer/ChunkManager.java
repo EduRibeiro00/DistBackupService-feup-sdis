@@ -42,15 +42,11 @@ public class ChunkManager {
      * @param senderId of STORED message received
      */
     public void addChunkReplication(String fileId, int chunkNo, int senderId) {
-        ArrayList<Integer> senders = this.perceivedReplicationTable.get(fileId + "_" + chunkNo);
+        String key = fileId + "_" + chunkNo;
+        ArrayList<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ArrayList<>());
 
-        if(senders == null) {
-            senders = new ArrayList<>(senderId);
-            this.perceivedReplicationTable.put(fileId + "_" + chunkNo, senders);
-            saveToDirectory(); //TODO: divide in two
-        } else if(!senders.contains(senderId)){
+        if(!senders.contains(senderId)){
             senders.add(senderId);
-            this.perceivedReplicationTable.put(fileId + "_" + chunkNo, senders);
             saveToDirectory(); //TODO: divide in two
         }
     }
@@ -60,7 +56,7 @@ public class ChunkManager {
      * @param fileId of the file sent by the peer
      * @param desiredRepDegree the new replicationDegree
      */
-    public void addDesiredReplication(String fileId, int desiredRepDegree) {
+    public void setDesiredReplication(String fileId, int desiredRepDegree) {
         this.desiredReplicationTable.put(fileId, desiredRepDegree);
         saveToDirectory(); //TODO: divide in two
     }
@@ -71,24 +67,24 @@ public class ChunkManager {
      * @param chunkNo
      * @return replication degree of chunkNo of fileID
      */
-    public int getReplicationDegree(String fileId, int chunkNo) {
-        ArrayList<Integer> senders = this.perceivedReplicationTable.get(fileId + "_" + chunkNo);
-
-        return senders == null ? 0 : senders.size();
+    public int getPerceivedReplication(String fileId, int chunkNo) {
+        return this.perceivedReplicationTable.getOrDefault(fileId + "_" + chunkNo, new ArrayList<>()).size();
     }
 
-    public void removeChunkReplication(String fileId, int chunk, int peerID) {
+    public void deletePerceivedReplication(String fileId, int chunk) {
         String key = fileId + "_" + chunk;
 
-        List<Integer> peers = this.perceivedReplicationTable.get(key);
-
-        if(peers != null) {
-            peers.removeIf(elem -> elem == peerID);
-            if(peers.size() == 0){
-                this.perceivedReplicationTable.remove(key);
-            }
+        if(this.perceivedReplicationTable.remove(key) != null){
             saveToDirectory(); //TODO: divide in two
         }
+    }
+
+    public int getDesiredReplication(String fileId) {
+        return this.desiredReplicationTable.getOrDefault(fileId, -1);
+    }
+
+    public void deleteDesiredReplication(String fileId) {
+        this.desiredReplicationTable.remove(fileId);
     }
 
     /**
@@ -99,7 +95,7 @@ public class ChunkManager {
         try {
             FileInputStream desRepFileIn = new FileInputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
             ObjectInputStream desRepObjIn = new ObjectInputStream(desRepFileIn);
-            this.desiredReplicationTable = (ConcurrentHashMap<String, Integer>)desRepObjIn.readObject();
+            this.desiredReplicationTable = (ConcurrentHashMap<String, Integer>) desRepObjIn.readObject();
             desRepFileIn.close();
             desRepObjIn.close();
         } catch (Exception e) {
@@ -121,7 +117,7 @@ public class ChunkManager {
     /**
      * Writes to files in the directory to save the information present on the tables
      */
-    private void saveToDirectory() {
+    synchronized private void saveToDirectory() {
 
         // Saving desired replication table
         try {
@@ -145,10 +141,5 @@ public class ChunkManager {
         } catch (Exception ignore) {
 
         }
-
-    }
-
-    public void removeFile(String fileId) {
-        this.desiredReplicationTable.remove(fileId);
     }
 }

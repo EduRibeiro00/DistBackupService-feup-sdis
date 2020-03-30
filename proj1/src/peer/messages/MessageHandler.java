@@ -20,6 +20,10 @@ public class MessageHandler {
             return;
         }
 
+        if(message.getHeader().getSenderId() == this.protocol.getPeerID()) {
+            return;
+        }
+
         System.out.println("Received message: " + message.getHeader());
 
         // Dispatch message to the protocol's method

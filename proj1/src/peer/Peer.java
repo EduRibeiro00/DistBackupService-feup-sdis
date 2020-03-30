@@ -120,7 +120,7 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public void delete(String filepath) {
-
+        this.protocol.initiateDelete(filepath);
     }
 
 
