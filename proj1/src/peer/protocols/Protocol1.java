@@ -6,6 +6,7 @@ import peer.messages.MessageType;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Random;
 
 public class Protocol1 extends Protocol {
@@ -51,6 +52,8 @@ public class Protocol1 extends Protocol {
     public void handleBackup(Message message) {
         Header header = message.getHeader();
 
+        this.chunkManager.addDesiredReplication(header.getFileId(), header.getReplicationDeg());
+
         if(header.getSenderId() == this.peerID) {
             return;
         }
@@ -94,7 +97,23 @@ public class Protocol1 extends Protocol {
 
     @Override
     public void delete(Message message) {
+        Header header = message.getHeader();
 
+        List<Integer> chunks = this.fileManager.getFileChunks(header.getFileId());
+
+        for (Integer chunk : chunks) {
+            try {
+                this.fileManager.removeChunk(header.getFileId(), chunk);
+                this.chunkManager.removeChunk(header.getFileId(), chunk);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            //Message response = new Message();
+        }
+
+        this.chunkManager.removeFile(header.getFileId());
+        this.fileManager.removeFile(header.getFileId());
     }
 
     @Override

@@ -95,7 +95,6 @@ public class ChunkManager {
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
     private void loadFromDirectory() {
-
         // Loading desired replication table
         try {
             FileInputStream desRepFileIn = new FileInputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
@@ -117,7 +116,6 @@ public class ChunkManager {
         } catch (Exception e) {
             this.perceivedReplicationTable = new ConcurrentHashMap<>();
         }
-
     }
 
     /**
