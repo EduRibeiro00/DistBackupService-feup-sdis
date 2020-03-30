@@ -5,7 +5,6 @@ import peer.messages.Message;
 import peer.messages.MessageType;
 
 import java.io.IOException;
-import java.net.MulticastSocket;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
@@ -31,7 +30,7 @@ public class Protocol1 extends Protocol {
                  i < 5 && this.chunkManager.getReplicationDegree(msg.getHeader().getFileId(), chunkNo) < replicationDeg;
                  i++) {
             try {
-                msg.send(this.mCastBackup, this.ipAddressMDB, this.portMDB);
+                msg.send(this.ipAddressMDB, this.portMDB);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -70,7 +69,7 @@ public class Protocol1 extends Protocol {
                     this.peerID,
                     header.getFileId(),
                     header.getChunkNo()
-            ).send(this.mCastControl, this.ipAddressMC, this.portMC);
+            ).send(this.ipAddressMC, this.portMC);
         } catch (Exception ignored) {
             ignored.printStackTrace();
         }

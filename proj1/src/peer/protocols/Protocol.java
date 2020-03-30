@@ -9,9 +9,6 @@ import java.io.IOException;
 
 
 public abstract class Protocol {
-    protected MulticastSocket mCastControl;  // multicast socket to send control messages
-    protected MulticastSocket mCastBackup;   // multicast socket to backup file chunk data
-    protected MulticastSocket mCastRestore;  // multicast socket to restore file chunk data
     protected int peerID;                 // peer identifier
     protected ChunkManager chunkManager;     // chunk manager
     protected FileManager fileManager;       // current available disk space
@@ -28,22 +25,7 @@ public abstract class Protocol {
     public Protocol(int peerID, String protocolVersion, 
                     String ipAddressMC, int portMC, 
                     String ipAddressMDB, int portMDB, 
-                    String ipAddressMDR, int portMDR) throws IOException {
-
-        this.mCastControl = new MulticastSocket(portMC);
-        this.mCastControl.joinGroup(InetAddress.getByName(ipAddressMC));
-        this.mCastControl.setTimeToLive(1);
-        System.out.println("MC channel up!");
-
-        this.mCastBackup = new MulticastSocket(portMDB);
-        this.mCastBackup.joinGroup(InetAddress.getByName(ipAddressMDB));
-        this.mCastBackup.setTimeToLive(1);
-        System.out.println("MDB channel up!");
-
-        this.mCastRestore = new MulticastSocket(portMDR);
-        this.mCastRestore.joinGroup(InetAddress.getByName(ipAddressMDR));
-        this.mCastRestore.setTimeToLive(1);
-        System.out.println("MDR channel up!");
+                    String ipAddressMDR, int portMDR) {
 
         this.ipAddressMC = ipAddressMC;
         this.portMC = portMC;
@@ -77,16 +59,4 @@ public abstract class Protocol {
 
     // Reclaim
     public abstract void removed(Message message);
-
-    public MulticastSocket getMCastControl() {
-        return mCastControl;
-    }
-
-    public MulticastSocket getMCastBackup() {
-        return mCastBackup;
-    }
-    
-    public MulticastSocket getMCastRestore() {
-        return mCastRestore;
-    }    
 }

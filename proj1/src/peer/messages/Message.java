@@ -107,14 +107,21 @@ public class Message {
 
 
     /**
-     * Sends a message in byte array format
-     * @param mcast_socket the multicast socket used to send the message
+     * send
+     * @param ipAddress
+     * @param port
      * @throws IOException
      */
-    public void send(MulticastSocket mcast_socket, String ipAddress, int port) throws IOException {
+    public void send(String ipAddress, int port) throws IOException {
+
+        // because sockets should not be shared between threads, each time a message is sent, a new socket object
+        // is created
+        MulticastSocket mCastSkt = new MulticastSocket(port);
+        mCastSkt.setTimeToLive(1);
+
         byte[] content = this.convertToBytes();
         DatagramPacket mcast_packet = new DatagramPacket(content, content.length, InetAddress.getByName(ipAddress), port);
-        mcast_socket.send(mcast_packet);
+        mCastSkt.send(mcast_packet);
 
         System.out.println("Sending message: " + this.header);
     }
