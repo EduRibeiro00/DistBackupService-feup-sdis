@@ -1,19 +1,14 @@
 package peer;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ChunkManager {
-    private final static String filesInfo = "files_info.json";
-    private final static String replicationInfo = "replication_info.json";
-    private final String directory; // Directory assigned to the peer
 
-    /**
-     * Stores the chunks of each file this peer has in his directory
-     * key = fileId
-     * value = array with ChunkNo
-     */
-    private ConcurrentHashMap<String, ArrayList<Integer>> chunksTable;
+public class ChunkManager {
+    private final static String desiredReplicationInfo = "desired_replication_info.json";
+    private final static String perceivedReplicationInfo = "perceived_replication_info.json";
+    private final String directory; // Directory assigned to the peer
 
     /**
      * Stores the desired replication degree for each file
@@ -101,23 +96,55 @@ public class ChunkManager {
 
         return senders == null ? 0 : senders.size();
     }
-
-    // TODO: save and load from files
-
+    
     /**
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
-    private void loadFromDirectory() {
-        this.chunksTable = new ConcurrentHashMap<>();
-        this.desiredReplicationTable = new ConcurrentHashMap<>();
-        this.perceivedReplicationTable = new ConcurrentHashMap<>();
+    private void loadFromDirectory() throws IOException, ClassNotFoundException {
+
+        // Loading desired replication table
+        try {
+            FileInputStream desRepFileIn = new FileInputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
+            ObjectInputStream desRepObjIn = new ObjectInputStream(desRepFileIn);
+            this.desiredReplicationTable = (ConcurrentHashMap<String, Integer>)desRepObjIn.readObject();
+            desRepFileIn.close();
+            desRepObjIn.close();
+
+        } catch (FileNotFoundException e) {
+            this.desiredReplicationTable = new ConcurrentHashMap<>();
+        }
+
+        // Loading perceived replication table
+        try {
+            FileInputStream percRepFileIn = new FileInputStream("./chunks/" + directory + "/" + perceivedReplicationTable);
+            ObjectInputStream percRepObjIn = new ObjectInputStream(percRepFileIn);
+            this.perceivedReplicationTable = (ConcurrentHashMap<String, ArrayList<Integer>>)percRepObjIn.readObject();
+            percRepFileIn.close();
+            percRepObjIn.close();
+
+        } catch (FileNotFoundException e) {
+            this.perceivedReplicationTable = new ConcurrentHashMap<>();
+        }
 
     }
 
     /**
      * Writes to files in the directory to save the information present on the tables
      */
-    private void saveToDirectory() {
+    private void saveToDirectory() throws IOException {
 
+        // Saving desired replication table
+        FileOutputStream desRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
+        ObjectOutputStream desRepObjOut = new ObjectOutputStream(desRepFileOut);
+        desRepObjOut.writeObject(desiredReplicationTable);
+        desRepObjOut.close();
+        desRepFileOut.close();
+
+        // Saving perceived replication table
+        FileOutputStream percRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + perceivedReplicationTable);
+        ObjectOutputStream percRepObjOut = new ObjectOutputStream(percRepFileOut);
+        percRepObjOut.writeObject(desiredReplicationTable);
+        percRepObjOut.close();
+        percRepFileOut.close();
     }
 }
