@@ -47,7 +47,7 @@ public class ChunkManager {
 
         if(!senders.contains(senderId)){
             senders.add(senderId);
-            saveToDirectory(); //TODO: divide in two
+            saveToDirectory();
         }
     }
 
@@ -58,7 +58,7 @@ public class ChunkManager {
      */
     public void setDesiredReplication(String fileId, int desiredRepDegree) {
         this.desiredReplicationTable.put(fileId, desiredRepDegree);
-        saveToDirectory(); //TODO: divide in two
+        saveToDirectory();
     }
 
     /**
@@ -75,7 +75,7 @@ public class ChunkManager {
         String key = fileId + "_" + chunk;
 
         if(this.perceivedReplicationTable.remove(key) != null){
-            saveToDirectory(); //TODO: divide in two
+            saveToDirectory();
         }
     }
 
