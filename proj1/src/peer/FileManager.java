@@ -19,10 +19,11 @@ public class FileManager {
      */
     private ConcurrentHashMap<String, ArrayList<Integer>> fileToChunks;
 
+
     /**
      * Stores the storage space used so far
      */
-    private int usedStorageSpace;
+    private int availableStorageSpace;
 
     /**
      * The ID of the peer of which files are being managed
@@ -35,14 +36,14 @@ public class FileManager {
      */
     public FileManager(int peerId) {
         this.peerId = peerId;
-        this.usedStorageSpace = 0;
+        this.availableStorageSpace = 100000; // 100 MB of storage for each peer
         this.createDirectory("chunks");
         this.createDirectory("files");
         this.fileToChunks = new ConcurrentHashMap<>();
     }
 
-    public int getUsedStorageSpace() {
-		return this.usedStorageSpace;
+    public int getAvailableStorageSpace() {
+		return this.availableStorageSpace;
 	}
 
     /**
@@ -71,6 +72,10 @@ public class FileManager {
             return true;
         }
 
+        // log storage
+        if (this.availableStorageSpace < chunkContent.getBytes().length)
+            return false;
+
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
         chunk.createNewFile();
@@ -78,8 +83,7 @@ public class FileManager {
         chunkWriter.write(chunkContent);
         chunkWriter.close();
 
-        // log storage
-        this.usedStorageSpace += chunkContent.getBytes().length;
+        this.availableStorageSpace -= chunkContent.getBytes().length;
 
         ArrayList<Integer> chunksForFile = this.fileToChunks.get(fileId);
         if(chunksForFile == null) chunksForFile = new ArrayList<>();

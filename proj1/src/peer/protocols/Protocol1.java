@@ -57,7 +57,10 @@ public class Protocol1 extends Protocol {
         }
 
         try {
-            this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody());
+            if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
+                return;
+            }
+
             this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
 
             Thread.sleep(new Random().nextInt(401));
