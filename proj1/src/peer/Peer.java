@@ -9,12 +9,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.text.SimpleDateFormat;
+
 
 /**
  * Class that makes the connection between the peer and the testing client
@@ -76,9 +73,10 @@ public class Peer implements RemoteInterface {
             throw new IllegalArgumentException("Invalid arguments for backup!");
         }
 
+        File file = new File(filepath);
         FileReader fileReader;
         try {
-            fileReader = new FileReader(filepath);
+            fileReader = new FileReader(file);
         } catch (FileNotFoundException e) {
             System.err.println("File not found");
             return;
@@ -88,10 +86,14 @@ public class Peer implements RemoteInterface {
         int chunkNo = 0;
         int minReplication = -1;
 
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        String modificationDate = sdf.format(file.lastModified());
+
         try {
             int charsRead, lastRead = 0;
             while ((charsRead = fileReader.read(fileContent, 0, 64000)) != -1) {
                 int replication = this.protocol.initiateBackup(filepath,
+                        modificationDate,
                         chunkNo,
                         new String(fileContent, 0, charsRead),
                         replicationDegree);
@@ -104,7 +106,7 @@ public class Peer implements RemoteInterface {
                 lastRead = charsRead;
             }
             if(lastRead == 64000) {
-                this.protocol.initiateBackup(filepath, chunkNo, "", replicationDegree);
+                this.protocol.initiateBackup(filepath, modificationDate, chunkNo, "", replicationDegree);
             }
         } catch (IOException e) {
             System.err.println("Error while reading file " + filepath);

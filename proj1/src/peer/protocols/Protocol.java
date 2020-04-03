@@ -52,7 +52,7 @@ public abstract class Protocol {
     }
 
     // Backup
-    public abstract int initiateBackup(String filePath, int chunkNo, String fileContent, int replicationDeg);
+    public abstract int initiateBackup(String filePath, String modificationDate, int chunkNo, String fileContent, int replicationDeg);
     public abstract void handleBackup(Message message);
     public abstract void stored(Message message);
 

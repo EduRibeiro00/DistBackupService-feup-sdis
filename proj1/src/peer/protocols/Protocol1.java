@@ -6,8 +6,8 @@ import peer.messages.MessageType;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class Protocol1 extends Protocol {
 
@@ -16,13 +16,12 @@ public class Protocol1 extends Protocol {
     }
 
     @Override
-    public int initiateBackup(String filePath, int chunkNo, String fileContent, int replicationDeg) {
-        String encodedFileId;
+    public int initiateBackup(String filePath, String modificationDate, int chunkNo, String fileContent, int replicationDeg) {
+        String encodedFileId = null;
         try {
-            encodedFileId = Header.encodeFileId(filePath + this.peerID);
+            encodedFileId = this.fileManager.insertHashForFile(filePath, modificationDate);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            return 0;
         }
 
         this.fileManager.setMaxChunkNo(encodedFileId, chunkNo);
@@ -51,12 +50,10 @@ public class Protocol1 extends Protocol {
     }
 
     @Override
-    public void initiateDelete(String filePath){
+    public void initiateDelete(String filePath) {
         String encodedFileId;
-        try {
-            encodedFileId = Header.encodeFileId(filePath + this.peerID);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+        encodedFileId = this.fileManager.getHashForFile(filePath);
+        if (encodedFileId == null) {
             return;
         }
 
@@ -77,6 +74,7 @@ public class Protocol1 extends Protocol {
 
         this.chunkManager.deleteDesiredReplication(encodedFileId);
         this.fileManager.deleteMaxChunkNo(encodedFileId);
+        this.fileManager.deleteHashForFile(filePath);
     }
 
 
@@ -128,13 +126,13 @@ public class Protocol1 extends Protocol {
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
 
-        List<Integer> chunks = this.fileManager.getFileChunks(fileId);
+        ConcurrentSkipListSet<Integer> chunks = this.fileManager.getFileChunks(fileId);
 
         for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
-            this.chunkManager.deletePerceivedReplication(fileId, chunks.get(i));
+            this.chunkManager.deletePerceivedReplication(fileId, (int) chunks.toArray()[i]);
 
             try {
-                this.fileManager.removeChunk(fileId, chunks.get(i));
+                this.fileManager.removeChunk(fileId, (int) chunks.toArray()[i]);
             } catch (IOException e) {
                 e.printStackTrace();
             }

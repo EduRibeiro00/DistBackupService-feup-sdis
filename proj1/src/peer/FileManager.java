@@ -1,5 +1,8 @@
 package peer;
 
+import peer.messages.Header;
+
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.io.File;
@@ -28,6 +31,15 @@ public class FileManager {
      */
     private ConcurrentHashMap<String, Integer> highestChunks;
 
+
+    /**
+     * Stores the generated FileID hashes for each of the backed up files
+     * key = file path
+     * value = corresponding FileID
+     */
+    private ConcurrentHashMap<String, String> hashBackedUpFiles;
+
+
     /**
      * Stores the storage space used so far
      */
@@ -37,6 +49,7 @@ public class FileManager {
      * The ID of the peer of which files are being managed
      */
     private int peerId;
+
 
     /**
      * 
@@ -49,6 +62,7 @@ public class FileManager {
         this.createDirectory("files");
         this.fileToChunks = new ConcurrentHashMap<>();
         this.highestChunks = new ConcurrentHashMap<>();
+        this.hashBackedUpFiles = new ConcurrentHashMap<>();
     }
 
     public int getAvailableStorageSpace() {
@@ -101,6 +115,35 @@ public class FileManager {
 
         return true;    //TODO: add error checking
     }
+
+
+    /**
+     * Inserts hash for file
+     * @param filepath The file path
+     * @param modificationDate The modification date of the file
+     * @return The generated file ID
+     */
+    public String insertHashForFile(String filepath, String modificationDate) throws NoSuchAlgorithmException {
+        System.out.println(filepath);
+        System.out.println(modificationDate);
+        String fileID = Header.encodeFileId(filepath + modificationDate);
+        this.hashBackedUpFiles.put(filepath, fileID);
+        return fileID;
+    }
+
+    /**
+     * Get an already computed fileID for a filepath
+     * @param filepath The file path
+     * @return The correspondent file ID for the file path
+     */
+    public String getHashForFile(String filepath) {
+        return this.hashBackedUpFiles.get(filepath);
+    }
+
+    public void deleteHashForFile(String filepath) {
+        this.hashBackedUpFiles.remove(filepath);
+    }
+
 
     /**
      * Return the content of a chunk
