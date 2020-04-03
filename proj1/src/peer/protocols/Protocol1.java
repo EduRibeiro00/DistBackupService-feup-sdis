@@ -5,6 +5,10 @@ import peer.messages.Message;
 import peer.messages.MessageType;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -24,14 +28,21 @@ public class Protocol1 extends Protocol {
             e.printStackTrace();
         }
 
-        this.fileManager.setMaxChunkNo(encodedFileId, chunkNo);
+        this.backupChunk(encodedFileId, chunkNo, fileContent, replicationDeg);
+
+        return this.chunkManager.getPerceivedReplication(encodedFileId, chunkNo);
+    }
+
+    @Override
+    protected void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg) {
+        this.fileManager.setMaxChunkNo(fileId, chunkNo);
 
         Message msg;
-        msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, encodedFileId, chunkNo, replicationDeg, fileContent);
+        msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
 
         for (int i = 0;
-                 i < 5 && this.chunkManager.getPerceivedReplication(encodedFileId, chunkNo) < replicationDeg;
-                 i++) {
+             i < 5 && this.chunkManager.getPerceivedReplication(fileId, chunkNo) < replicationDeg;
+             i++) {
             try {
                 msg.send(this.ipAddressMDB, this.portMDB);
             } catch (IOException e) {
@@ -43,10 +54,8 @@ public class Protocol1 extends Protocol {
             } catch (InterruptedException ignored) { }
 
             System.out.println("Ending cycle, have replication degree of " + this.chunkManager.getPerceivedReplication(
-                    encodedFileId, chunkNo));
+                    fileId, chunkNo));
         }
-
-        return this.chunkManager.getPerceivedReplication(encodedFileId, chunkNo);
     }
 
     @Override
@@ -147,6 +156,57 @@ public class Protocol1 extends Protocol {
 
     @Override
     public void removed(Message message) {
+        String fileId = message.getHeader().getFileId();
+        int chunkNo = message.getHeader().getChunkNo();
+        int senderId = message.getHeader().getSenderId();
 
+        this.chunkManager.reduceChunkReplication(fileId, chunkNo, senderId);
+        int perceivedReplication = this.chunkManager.getPerceivedReplication(fileId, chunkNo);
+        int desiredReplication = this.chunkManager.getDesiredReplication(fileId);
+
+        if(this.fileManager.isChunkStored(fileId, chunkNo) && desiredReplication > perceivedReplication) {
+            String chunkContent = this.fileManager.getChunk(fileId, chunkNo);
+
+            MulticastSocket mCastSkt;
+            try {
+                mCastSkt = new MulticastSocket(this.portMDB);
+                mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDB));
+                mCastSkt.setTimeToLive(1);
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: change this
+                return;
+            }
+
+            long waitTime = new Random().nextInt(401);
+            try {
+                mCastSkt.setSoTimeout((int) waitTime);
+            } catch (SocketException e) {
+                e.printStackTrace(); // TODO: change this
+                return;
+            }
+
+            byte[] buffer = new byte[64500];
+            DatagramPacket packet = new DatagramPacket(buffer, 64500);
+            try {
+                while(waitTime > 0) {
+                    long before = System.currentTimeMillis();
+                    mCastSkt.receive(packet);
+                    waitTime -= System.currentTimeMillis() - before;
+
+                    Message msg = new Message(packet.getData());
+                    if(msg.getHeader().getMessageType() == MessageType.PUTCHUNK &&
+                            msg.getHeader().getFileId().equals(fileId) &&
+                            msg.getHeader().getChunkNo() == chunkNo) {
+                        return;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: change this
+            }
+
+            this.backupChunk(fileId, chunkNo, chunkContent, desiredReplication);
+        }
     }
+
+
 }

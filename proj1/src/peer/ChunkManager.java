@@ -48,6 +48,15 @@ public class ChunkManager {
         }
     }
 
+    public void reduceChunkReplication(String fileId, int chunkNo, int senderId) {
+        String key = fileId + "_" + chunkNo;
+        ConcurrentSkipListSet<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ConcurrentSkipListSet<>());
+
+        if(senders.remove(senderId)) {
+            saveToDirectory();
+        }
+    }
+
     /**
      * Updates the desiredReplicationTable with the new replicationDegree
      * @param fileId of the file sent by the peer
@@ -68,6 +77,11 @@ public class ChunkManager {
         return this.perceivedReplicationTable.getOrDefault(fileId + "_" + chunkNo, new ConcurrentSkipListSet<>()).size();
     }
 
+    /**
+     * Deletes the perceived replication degree of a given file's chunk
+     * @param fileId The ID of the file
+     * @param chunk The number of the chunk
+     */
     public void deletePerceivedReplication(String fileId, int chunk) {
         String key = fileId + "_" + chunk;
 

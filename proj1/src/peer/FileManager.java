@@ -119,6 +119,40 @@ public class FileManager {
         return true;    //TODO: add error checking
     }
 
+    /**
+     * Returns the content of a file's chunk
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     * @return A string with the chunk's content
+     */
+    public String getChunk(String fileId, int chunkNo) {
+        if(this.isChunkStored(fileId, chunkNo)) {
+            return "";
+        }
+
+        String chunkPath = getChunkPath(fileId, chunkNo);
+        File chunkFile = new File(chunkPath);
+
+        FileReader chunkReader;
+        try {
+            chunkReader = new FileReader(chunkFile);
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found");
+            return "";
+        }
+
+        char[] chunkContent = new char[64000];
+
+        try {
+            chunkReader.read(chunkContent, 0, 64000);
+        } catch (IOException e) {
+            System.err.println("Error reading file");
+            return "";
+        }
+
+        return chunkContent.toString();
+    }
+
 
     /**
      * Inserts hash for file
@@ -143,6 +177,10 @@ public class FileManager {
         return this.hashBackedUpFiles.get(filepath);
     }
 
+    /**
+     * Deletes hash for a given file
+     * @param filepath The file path
+     */
     public void deleteHashForFile(String filepath) {
         this.hashBackedUpFiles.remove(filepath);
     }
@@ -284,7 +322,7 @@ public class FileManager {
      * @param chunkNo The number of the chunk
      * @return true if it's stored, false if otherwise
      */
-    private boolean isChunkStored(String fileId, int chunkNo) {
+    public boolean isChunkStored(String fileId, int chunkNo) {
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
         return chunks.contains(chunkNo);
     }
