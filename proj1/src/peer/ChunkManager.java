@@ -1,10 +1,8 @@
 package peer;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class ChunkManager {
     private final static String desiredReplicationInfo = "desired_replication_info.json";
@@ -23,7 +21,7 @@ public class ChunkManager {
      * key = fileId + _ + chunkNo
      * value = set with ids of the senders
      */
-    private ConcurrentHashMap<String, ArrayList<Integer>> perceivedReplicationTable;
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> perceivedReplicationTable;
 
 
     /**
@@ -43,10 +41,9 @@ public class ChunkManager {
      */
     public void addChunkReplication(String fileId, int chunkNo, int senderId) {
         String key = fileId + "_" + chunkNo;
-        ArrayList<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ArrayList<>());
+        ConcurrentSkipListSet<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ConcurrentSkipListSet<>());
 
-        if(!senders.contains(senderId)){
-            senders.add(senderId);
+        if(senders.add(senderId)) {
             saveToDirectory();
         }
     }
@@ -68,7 +65,7 @@ public class ChunkManager {
      * @return replication degree of chunkNo of fileID
      */
     public int getPerceivedReplication(String fileId, int chunkNo) {
-        return this.perceivedReplicationTable.getOrDefault(fileId + "_" + chunkNo, new ArrayList<>()).size();
+        return this.perceivedReplicationTable.getOrDefault(fileId + "_" + chunkNo, new ConcurrentSkipListSet<>()).size();
     }
 
     public void deletePerceivedReplication(String fileId, int chunk) {
@@ -106,7 +103,7 @@ public class ChunkManager {
         try {
             FileInputStream percRepFileIn = new FileInputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
             ObjectInputStream percRepObjIn = new ObjectInputStream(percRepFileIn);
-            this.perceivedReplicationTable = (ConcurrentHashMap<String, ArrayList<Integer>>)percRepObjIn.readObject();
+            this.perceivedReplicationTable = (ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>)percRepObjIn.readObject();
             percRepFileIn.close();
             percRepObjIn.close();
         } catch (Exception e) {

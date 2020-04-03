@@ -1,8 +1,7 @@
 package peer;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -20,7 +19,7 @@ public class FileManager {
      * key = fileId
      * value = array with ChunkNo
      */
-    private ConcurrentHashMap<String, ArrayList<Integer>> fileToChunks;
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> fileToChunks;
 
     /**
      * Stores the highest chunk number of each file received and sent
@@ -145,7 +144,7 @@ public class FileManager {
         this.highestChunks.remove(fileId);
     }
 
-    public List<Integer> getFileChunks(String fileId) {
+    public ConcurrentSkipListSet<Integer> getFileChunks(String fileId) {
         return this.fileToChunks.get(fileId);
     }
 
@@ -157,7 +156,7 @@ public class FileManager {
         String chunkPath = getChunkPath(fileId, chunkNo);
         Files.deleteIfExists(Paths.get(chunkPath));
 
-        List<Integer> chunks = this.fileToChunks.get(fileId);
+        ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.get(fileId);
         chunks.removeIf(elem -> elem.equals(chunkNo));
 
         System.out.println(chunks.size());
@@ -174,21 +173,17 @@ public class FileManager {
     }
 
     private void addChunkStored(String fileId, int chunkNo) {
-        List<Integer> chunks = this.fileToChunks.computeIfAbsent(fileId, value -> new ArrayList<>());
-        if (chunks.contains(chunkNo)) {
-            return;
-        }
-
+        ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.computeIfAbsent(fileId, value -> new ConcurrentSkipListSet<>());
         chunks.add(chunkNo);
     }
 
     private boolean removeChunkStored(String fileId, int chunkNo) {
-        List<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ArrayList<>());
+        ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
         return chunks.removeIf(elem -> elem == chunkNo);
     }
 
     private boolean isChunkStored(String fileId, int chunkNo) {
-        List<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ArrayList<>());
+        ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
         return chunks.contains(chunkNo);
     }
 
