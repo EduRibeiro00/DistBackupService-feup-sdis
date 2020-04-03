@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -36,6 +37,10 @@ public class Protocol1 extends Protocol {
     @Override
     protected void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg) {
         this.fileManager.setMaxChunkNo(fileId, chunkNo);
+        this.chunkManager.setDesiredReplication(fileId, replicationDeg);
+        System.out.println(fileId);
+        System.out.println(1);
+        System.out.println(this.chunkManager.getDesiredReplication(fileId));
 
         Message msg;
         msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
@@ -146,9 +151,9 @@ public class Protocol1 extends Protocol {
                 e.printStackTrace();
             }
 
-            //Message response = new Message(); // enhancement
         }
-        System.out.println(this.fileManager.getFileChunks(fileId) == null ? "Successfully deleted all chunks":"Failed to delete all chunks");
+        // TODO: ver melhor isto
+        System.out.println(this.fileManager.getFileChunks(fileId) == null ? "Successfully deleted all chunks" : "Failed to delete all chunks");
 
         this.chunkManager.deleteDesiredReplication(fileId);
         this.fileManager.removeFile(fileId);
@@ -209,4 +214,39 @@ public class Protocol1 extends Protocol {
     }
 
 
+    @Override
+    public String state() {
+        StringBuilder stateInformation = new StringBuilder();
+        stateInformation.append("Files backed up by other peers:\n");
+        for(Map.Entry<String, String> entry : this.fileManager.getHashBackedUpFiles()) {
+            stateInformation.append("\t" + "Path name: " + entry.getKey() + "\n"); // file path
+            stateInformation.append("\t" + "File ID: " + entry.getValue() + "\n"); // backup service ID of the file
+            stateInformation.append("\t" + "Desired replication degree: " + this.chunkManager.getDesiredReplication(entry.getValue()) + "\n"); // desired replication degree
+            stateInformation.append("\t" + "Chunks of the file: " + "\n");
+            int maxChunk = this.fileManager.getMaxChunkNo(entry.getValue());
+            // for each chunk
+            for (int i = 0; i <= maxChunk; i++) {
+                stateInformation.append("\t\t" + "Chunk ID: " + i + "\n"); // chunk ID
+                stateInformation.append("\t\t" + "Perceived replication degree: " + this.chunkManager.getPerceivedReplication(entry.getValue(), i) + "\n"); // perceived replication degree
+            }
+        }
+
+        stateInformation.append("\n");
+        stateInformation.append("Files/chunks stored:\n");
+
+        for(Map.Entry<String, ConcurrentSkipListSet<Integer>> entry : this.fileManager.getFileToChunksEntries()) {
+            stateInformation.append("\t" + "File ID: " + entry.getKey() + "\n"); // file ID
+            for(int chunkNo : entry.getValue()) {
+                stateInformation.append("\t\t" + "Chunk ID: " + chunkNo + "\n"); // chunk ID
+                stateInformation.append("\t\t" + "Chunk size: " + this.fileManager.getChunkSize(entry.getKey(), chunkNo) + " KB\n"); // chunk size
+                stateInformation.append("\t\t" + "Perceived replication degree: " + this.chunkManager.getPerceivedReplication(entry.getKey(), chunkNo) + "\n"); // perceived replication degree
+            }
+        }
+
+        stateInformation.append("\n");
+        stateInformation.append("Maximum storage capacity: " + this.fileManager.getMaximumStorageSpace() + " KB\n");
+        stateInformation.append("Available storage capacity: " + this.fileManager.getAvailableStorageSpace() + " KB\n");
+
+        return stateInformation.toString();
+    }
 }

@@ -4,6 +4,8 @@ import peer.messages.Header;
 
 import java.security.NoSuchAlgorithmException;
 import java.io.*;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.nio.file.Files;
@@ -25,6 +27,15 @@ public class FileManager {
      */
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> fileToChunks;
 
+
+    /**
+     * Stores the size of each chunk it saves
+     * key = fileID_chunkNo (identifier of the chunk)
+     * value = the size of the chunk
+     */
+    private ConcurrentHashMap<String, Integer> chunkSizes;
+
+
     /**
      * Stores the highest chunk number of each file received and sent
      * key = fileId
@@ -42,9 +53,16 @@ public class FileManager {
 
 
     /**
-     * Stores the storage space used so far
+     * Stores the available storage space, in KB
      */
     private int availableStorageSpace;
+
+
+    /**
+     * Stores the maximum available storage space, in KB
+     */
+    private int maximumStorageSpace;
+
 
     /**
      * The ID of the peer of which files are being managed
@@ -58,19 +76,46 @@ public class FileManager {
      */
     public FileManager(int peerId) {
         this.peerId = peerId;
-        this.availableStorageSpace = 100000; // 100 MB of storage for each peer
+        this.maximumStorageSpace = 100000; // 100 MB of storage for each peer
+        this.availableStorageSpace = this.maximumStorageSpace;
         this.createDirectory("chunks");
         this.createDirectory("files");
         this.loadFromDirectory();
     }
 
     /**
+     * Return the maximum storage space
+     * @return an integer symbolizing the maximum available storage space in KB
+     */
+    public int getMaximumStorageSpace() {
+        return maximumStorageSpace;
+    }
+
+    /**
      * Returns the available storage space
-     * @return an integer symbolizing the used storage space in bytes
+     * @return an integer symbolizing the available storage space in KB
      */
     public int getAvailableStorageSpace() {
 		return this.availableStorageSpace;
 	}
+
+    /**
+     * Returns information of the backed up files
+     * @return a set of entries with that information
+     */
+    public Set<Map.Entry<String, ConcurrentSkipListSet<Integer>>> getFileToChunksEntries() {
+        return fileToChunks.entrySet();
+    }
+
+
+    /**
+     * Returns information of the backed up files
+     * @return a set of entries with that information
+     */
+    public Set<Map.Entry<String, String>> getHashBackedUpFiles() {
+        return hashBackedUpFiles.entrySet();
+    }
+
 
     /**
      * Creates a storage directory for the current peer
@@ -98,8 +143,10 @@ public class FileManager {
             return true;
         }
 
+        int chunkSize = chunkContent.getBytes().length / 1024;
+
         // log storage
-        if (this.availableStorageSpace < chunkContent.getBytes().length) {
+        if (this.availableStorageSpace < chunkSize) {
             return false;
         }
 
@@ -112,9 +159,10 @@ public class FileManager {
         chunkWriter.write(chunkContent);
         chunkWriter.close();
 
-        this.availableStorageSpace -= chunkContent.getBytes().length;
+        this.availableStorageSpace -= chunkSize;
 
         this.setMaxChunkNo(fileId, chunkNo);
+        this.chunkSizes.put(fileId + "_" + chunkNo, chunkSize);
 
         return true;    //TODO: add error checking
     }
@@ -161,8 +209,6 @@ public class FileManager {
      * @return The generated file ID
      */
     public String insertHashForFile(String filepath, String modificationDate) throws NoSuchAlgorithmException {
-        System.out.println(filepath);
-        System.out.println(modificationDate);
         String fileID = Header.encodeFileId(filepath + modificationDate);
         this.hashBackedUpFiles.put(filepath, fileID);
         return fileID;
@@ -235,6 +281,18 @@ public class FileManager {
         return this.highestChunks.getOrDefault(fileId, -1);
     }
 
+
+    /**
+     *
+     * @param fileId
+     * @param chunkNo
+     * @return
+     */
+    public int getChunkSize(String fileId, int chunkNo) {
+        return this.chunkSizes.getOrDefault(fileId + "_" + chunkNo, -1);
+    }
+
+
     /**
      * Deletes the maximum chunk number for a file
      * @param fileId The ID of the file
@@ -276,6 +334,8 @@ public class FileManager {
         if (chunks.size() == 0) {
             this.fileToChunks.remove(fileId);
         }
+
+        this.chunkSizes.remove(fileId + "_" + chunkNo);
 
         this.saveToDirectory();
 
@@ -365,6 +425,18 @@ public class FileManager {
             this.hashBackedUpFiles = new ConcurrentHashMap<>();
         }
 
+        // Loading chunk sizes table
+        this.chunkSizes = new ConcurrentHashMap<>();
+        for (Map.Entry<String, ConcurrentSkipListSet<Integer>> entry : this.fileToChunks.entrySet()) {
+            String fileID = entry.getKey();
+            for (int chunkNo : entry.getValue()) {
+                String filename = fileID + "_" + chunkNo;
+                File chunk = new File(this.getDirectoryPath("chunks") + filename);
+                if (chunk.exists()) {
+                    this.chunkSizes.put(filename, (int) chunk.length() / 1024);
+                }
+            }
+        }
     }
 
     /**

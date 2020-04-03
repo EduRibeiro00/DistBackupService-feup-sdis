@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+// java client.TestApp 1234 STATE
 // java client.TestApp 1234 BACKUP peer/files/ola.txt 1
 // java client.TestApp 1234 DELETE peer/files/ola.txt
 // java peer.PeerLauncher 1.0 1234 1234 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
@@ -52,7 +53,7 @@ public class TestApp {
                     server.reclaim(Integer.parseInt(args[2]));
                     break;
                 case "STATE":
-                    System.out.println("Server state:\n" + server.state());
+                    System.out.println(server.state());
                     break;
                 default:
                     System.err.println("Invalid action given, unknown action:" + args[2]);

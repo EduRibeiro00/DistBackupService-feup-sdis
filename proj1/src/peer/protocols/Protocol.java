@@ -67,4 +67,7 @@ public abstract class Protocol {
 
     // Reclaim
     public abstract void removed(Message message);
+
+    // State
+    public abstract String state();
 }

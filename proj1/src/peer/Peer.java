@@ -151,10 +151,13 @@ public class Peer implements RemoteInterface {
     /**
      * Implementation of the state request.
      * @return String with peer state
-     * @throws RemoteException
      */
     @Override
     public String state() {
-        return null;
+        StringBuilder stateInformation = new StringBuilder();
+        stateInformation.append("STATE INFORMATION\n----------------\n");
+        stateInformation.append(this.protocol.state());
+        stateInformation.append("\n----------------\n");
+        return stateInformation.toString();
     }
 }
