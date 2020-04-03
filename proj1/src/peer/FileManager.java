@@ -1,11 +1,9 @@
 package peer;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.charset.*;
@@ -14,6 +12,9 @@ import java.nio.charset.*;
  * Class that manages the storage and lookup of local files
  */
 public class FileManager {
+
+    private final static String fileToChunksInfo = "file_to_chunks.json";
+    private final static String highestChunksInfo = "highest_chunks.json";
 
     /**
      * Stores the chunks of each file this peer has in his directory
@@ -193,4 +194,60 @@ public class FileManager {
     }
 
     //TODO: save load from files
+    /**
+     * Fills the tables with the information present in the directory that was passed to the constructor
+     */
+    private void loadFromDirectory() {
+
+        // Loading highest chunks table
+        try {
+            FileInputStream highestChunksFileIn = new FileInputStream(this.getDirectoryPath("chunks") + highestChunksInfo);
+            ObjectInputStream highestChunksObjIn = new ObjectInputStream(highestChunksFileIn);
+            this.highestChunks = (ConcurrentHashMap<String, Integer>) highestChunksObjIn.readObject();
+            highestChunksFileIn.close();
+            highestChunksObjIn.close();
+        } catch (Exception e) {
+            this.highestChunks = new ConcurrentHashMap<>();
+        }
+
+        // Loading file to chunks table
+        try {
+            FileInputStream fileToChunksFileIn = new FileInputStream(this.getDirectoryPath("chunks") + fileToChunksInfo);
+            ObjectInputStream fileToChunksObjIn = new ObjectInputStream(fileToChunksFileIn);
+            this.fileToChunks = (ConcurrentHashMap<String, ArrayList<Integer>>)fileToChunksObjIn.readObject();
+            fileToChunksFileIn.close();
+            fileToChunksObjIn.close();
+        } catch (Exception e) {
+            this.fileToChunks = new ConcurrentHashMap<>();
+        }
+    }
+
+    /**
+     * Writes to files in the directory to save the information present on the tables
+     */
+    synchronized private void saveToDirectory() {
+
+        // Saving highest chunks table
+        try {
+            FileOutputStream highestChunksFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + highestChunksInfo);
+            ObjectOutputStream highestChunksObjOut = new ObjectOutputStream(highestChunksFileOut);
+            highestChunksObjOut.writeObject(this.highestChunks);
+            highestChunksObjOut.close();
+            highestChunksFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+
+        // Saving file to chunks table
+        try {
+            FileOutputStream fileToChunkFileOut = null;
+            fileToChunkFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + fileToChunksInfo);
+            ObjectOutputStream fileToChunkObjOut = new ObjectOutputStream(fileToChunkFileOut);
+            fileToChunkObjOut.writeObject(this.fileToChunks);
+            fileToChunkObjOut.close();
+            fileToChunkFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+    }
 }
