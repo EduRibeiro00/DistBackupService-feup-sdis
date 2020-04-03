@@ -14,8 +14,9 @@ import java.nio.charset.*;
  * Class that manages the storage and lookup of local files
  */
 public class FileManager {
-    private final static String fileToChunksInfo = "file_to_chunks.json";
-    private final static String highestChunksInfo = "highest_chunks.json";
+    private final static String fileToChunksInfo = "file_to_chunks.data";
+    private final static String highestChunksInfo = "highest_chunks.data";
+    private final static String hashBackedUpFilesInfo = "hash_backed_up_files.data";
 
     /**
      * Stores the chunks of each file this peer has in his directory
@@ -314,6 +315,18 @@ public class FileManager {
         } catch (Exception e) {
             this.fileToChunks = new ConcurrentHashMap<>();
         }
+
+        // Loading hash backed up files table
+        try {
+            FileInputStream hashBackedUpFilesFileIn = new FileInputStream(this.getDirectoryPath("chunks") + hashBackedUpFilesInfo);
+            ObjectInputStream hashBackedUpFilesObjIn = new ObjectInputStream(hashBackedUpFilesFileIn);
+            this.hashBackedUpFiles = (ConcurrentHashMap<String, String>)hashBackedUpFilesObjIn.readObject();
+            hashBackedUpFilesFileIn.close();
+            hashBackedUpFilesObjIn.close();
+        } catch (Exception e) {
+            this.hashBackedUpFiles = new ConcurrentHashMap<>();
+        }
+
     }
 
     /**
@@ -340,6 +353,18 @@ public class FileManager {
             fileToChunkObjOut.writeObject(this.fileToChunks);
             fileToChunkObjOut.close();
             fileToChunkFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+
+        // Saving hash backed up files table
+        try {
+            FileOutputStream hashBackedUpFilesFileOut = null;
+            hashBackedUpFilesFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + hashBackedUpFilesInfo);
+            ObjectOutputStream hashBackedUpFilesObjOut = new ObjectOutputStream(hashBackedUpFilesFileOut);
+            hashBackedUpFilesObjOut.writeObject(this.hashBackedUpFiles);
+            hashBackedUpFilesObjOut.close();
+            hashBackedUpFilesFileOut.close();
         } catch (Exception ignore) {
 
         }

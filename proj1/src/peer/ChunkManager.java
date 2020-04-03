@@ -5,8 +5,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class ChunkManager {
-    private final static String desiredReplicationInfo = "desired_replication_info.json";
-    private final static String perceivedReplicationInfo = "perceived_replication_info.json";
+    private final static String desiredReplicationInfo = "desired_replication_info.data";
+    private final static String perceivedReplicationInfo = "perceived_replication_info.data";
     private final String directory; // Directory assigned to the peer
 
     /**
