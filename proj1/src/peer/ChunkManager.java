@@ -59,9 +59,9 @@ public class ChunkManager {
     }
 
     /**
-     *
-     * @param fileId
-     * @param chunkNo
+     * Returns the perceived replication degree of a given file's chunk
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
      * @return replication degree of chunkNo of fileID
      */
     public int getPerceivedReplication(String fileId, int chunkNo) {
@@ -76,12 +76,22 @@ public class ChunkManager {
         }
     }
 
+    /**
+     * Returns the desired replication degree of a file
+     * @param fileId The ID of the file
+     * @return The desired replication degree of the file
+     */
     public int getDesiredReplication(String fileId) {
         return this.desiredReplicationTable.getOrDefault(fileId, -1);
     }
 
+    /**
+     * Deletes the desired replication degree of a file
+     * @param fileId The ID of the file
+     */
     public void deleteDesiredReplication(String fileId) {
         this.desiredReplicationTable.remove(fileId);
+        saveToDirectory();
     }
 
     /**
@@ -139,4 +149,5 @@ public class ChunkManager {
 
         }
     }
+
 }

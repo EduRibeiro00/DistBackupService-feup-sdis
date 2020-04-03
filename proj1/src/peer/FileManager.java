@@ -3,11 +3,9 @@ package peer;
 import peer.messages.Header;
 
 import java.security.NoSuchAlgorithmException;
+import java.io.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.charset.*;
@@ -16,6 +14,8 @@ import java.nio.charset.*;
  * Class that manages the storage and lookup of local files
  */
 public class FileManager {
+    private final static String fileToChunksInfo = "file_to_chunks.json";
+    private final static String highestChunksInfo = "highest_chunks.json";
 
     /**
      * Stores the chunks of each file this peer has in his directory
@@ -52,7 +52,7 @@ public class FileManager {
 
 
     /**
-     * 
+     * Constructor
      * @param peerId The ID of the peer of which files are going to be managed
      */
     public FileManager(int peerId) {
@@ -60,11 +60,13 @@ public class FileManager {
         this.availableStorageSpace = 100000; // 100 MB of storage for each peer
         this.createDirectory("chunks");
         this.createDirectory("files");
-        this.fileToChunks = new ConcurrentHashMap<>();
-        this.highestChunks = new ConcurrentHashMap<>();
-        this.hashBackedUpFiles = new ConcurrentHashMap<>();
+        this.loadFromDirectory();
     }
 
+    /**
+     * Returns the available storage space
+     * @return an integer symbolizing the used storage space in bytes
+     */
     public int getAvailableStorageSpace() {
 		return this.availableStorageSpace;
 	}
@@ -175,22 +177,50 @@ public class FileManager {
         return storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
     }
 
+    /**
+     * Sets the maximum chunk number for a file
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     */
     public void setMaxChunkNo(String fileId, int chunkNo) {
         this.highestChunks.compute(fileId, (key, value) -> (value == null || chunkNo > value) ? chunkNo : value);
+        saveToDirectory();
     }
 
+    /**
+     * Returns the maximum chunk number for a file
+     * @param fileId The ID of the file
+     * @return The number of the chunk
+     */
     public int getMaxChunkNo(String fileId) {
         return this.highestChunks.getOrDefault(fileId, -1);
     }
 
+    /**
+     * Deletes the maximum chunk number for a file
+     * @param fileId The ID of the file
+     */
     public void deleteMaxChunkNo(String fileId) {
         this.highestChunks.remove(fileId);
+        saveToDirectory();
     }
 
+    /**
+     * Returns a list with the chunks of a file
+     * @param fileId The ID of the file
+     * @return A list with the chunks of the file
+     */
     public ConcurrentSkipListSet<Integer> getFileChunks(String fileId) {
         return this.fileToChunks.get(fileId);
     }
 
+    /**
+     * Removes a chunk from a file
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     * @return true if successful, false if otherwise
+     * @throws IOException
+     */
     public boolean removeChunk(String fileId, int chunkNo) throws IOException {
         if (!this.removeChunkStored(fileId, chunkNo)) {
             return false;
@@ -207,28 +237,112 @@ public class FileManager {
         if (chunks.size() == 0) {
             this.fileToChunks.remove(fileId);
         }
+
+        this.saveToDirectory();
+
         return true;
     }
 
+    /**
+     * Removes a file from the hash tables
+     * @param fileId The ID of the file
+     */
     public void removeFile(String fileId) {
         this.fileToChunks.remove(fileId);
         this.highestChunks.remove(fileId);
+
+        saveToDirectory();
     }
 
+    /**
+     * Adds information that a chunk of a file was stored
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     */
     private void addChunkStored(String fileId, int chunkNo) {
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.computeIfAbsent(fileId, value -> new ConcurrentSkipListSet<>());
         chunks.add(chunkNo);
+
+        saveToDirectory();
     }
 
+    /**
+     * Removes information that a chunk of a file was stored
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     * @return
+     */
     private boolean removeChunkStored(String fileId, int chunkNo) {
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
         return chunks.removeIf(elem -> elem == chunkNo);
     }
 
+    /**
+     * Checks if a file's chunk is stored
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     * @return true if it's stored, false if otherwise
+     */
     private boolean isChunkStored(String fileId, int chunkNo) {
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
         return chunks.contains(chunkNo);
     }
 
-    //TODO: save load from files
+    /**
+     * Fills the tables with the information present in the directory that was passed to the constructor
+     */
+    private void loadFromDirectory() {
+
+        // Loading highest chunks table
+        try {
+            FileInputStream highestChunksFileIn = new FileInputStream(this.getDirectoryPath("chunks") + highestChunksInfo);
+            ObjectInputStream highestChunksObjIn = new ObjectInputStream(highestChunksFileIn);
+            this.highestChunks = (ConcurrentHashMap<String, Integer>) highestChunksObjIn.readObject();
+            highestChunksFileIn.close();
+            highestChunksObjIn.close();
+        } catch (Exception e) {
+            this.highestChunks = new ConcurrentHashMap<>();
+        }
+
+        // Loading file to chunks table
+        try {
+            FileInputStream fileToChunksFileIn = new FileInputStream(this.getDirectoryPath("chunks") + fileToChunksInfo);
+            ObjectInputStream fileToChunksObjIn = new ObjectInputStream(fileToChunksFileIn);
+            this.fileToChunks = (ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>)fileToChunksObjIn.readObject();
+            fileToChunksFileIn.close();
+            fileToChunksObjIn.close();
+        } catch (Exception e) {
+            this.fileToChunks = new ConcurrentHashMap<>();
+        }
+    }
+
+    /**
+     * Writes to files in the directory to save the information present on the tables
+     */
+    synchronized private void saveToDirectory() {
+
+        // Saving highest chunks table
+        try {
+            FileOutputStream highestChunksFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + highestChunksInfo);
+            ObjectOutputStream highestChunksObjOut = new ObjectOutputStream(highestChunksFileOut);
+            highestChunksObjOut.writeObject(this.highestChunks);
+            highestChunksObjOut.close();
+            highestChunksFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+
+        // Saving file to chunks table
+        try {
+            FileOutputStream fileToChunkFileOut = null;
+            fileToChunkFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + fileToChunksInfo);
+            ObjectOutputStream fileToChunkObjOut = new ObjectOutputStream(fileToChunkFileOut);
+            fileToChunkObjOut.writeObject(this.fileToChunks);
+            fileToChunkObjOut.close();
+            fileToChunkFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+    }
+
 }
