@@ -72,7 +72,7 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public void backup(String filepath, int replicationDegree) {
-        if (filepath == null || replicationDegree < 1) {
+        if (filepath == null || replicationDegree < 1 || replicationDegree > 9) {
             throw new IllegalArgumentException("Invalid arguments for backup!");
         }
 
