@@ -66,7 +66,7 @@ public abstract class Protocol {
     public abstract void delete(Message message);
 
     // Reclaim
-    public abstract void reclaim(int size);
+    public abstract void reclaim(int newMaximumStorageCapacity);
     public abstract void removed(Message message);
 
     // State

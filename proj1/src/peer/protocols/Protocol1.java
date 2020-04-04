@@ -41,9 +41,6 @@ public class Protocol1 extends Protocol {
     protected void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg) {
         this.fileManager.setMaxChunkNo(fileId, chunkNo);
         this.chunkManager.setDesiredReplication(fileId, replicationDeg);
-        System.out.println(fileId);
-        System.out.println(1);
-        System.out.println(this.chunkManager.getDesiredReplication(fileId));
 
         Message msg;
         msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
@@ -162,8 +159,8 @@ public class Protocol1 extends Protocol {
 
 
     @Override
-    public void reclaim(int size) {
-        this.fileManager.setMaximumStorageSpace(size);
+    public void reclaim(int newMaximumStorageCapacity) {
+        this.fileManager.setMaximumStorageSpace(newMaximumStorageCapacity);
 
         if(this.fileManager.getAvailableStorageSpace() >= 0)
             return;

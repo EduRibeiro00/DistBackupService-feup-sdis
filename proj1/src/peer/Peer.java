@@ -117,22 +117,22 @@ public class Peer implements RemoteInterface {
 
     /**
      * Implementation of the delete request.
-     * @param filepath filepath of the file we want to delete
+     * @param fileId filepath of the file we want to delete
      * @throws RemoteException
      */
     @Override
-    public void delete(String filepath) {
-        this.protocol.initiateDelete(filepath);
+    public void delete(String fileId) {
+        this.protocol.initiateDelete(fileId);
     }
 
 
     /**
      * Implementation of the restore request.
-     * @param filepath filepath of the file we want to restore
+     * @param fileId filepath of the file we want to restore
      * @throws RemoteException
      */
     @Override
-    public void restore(String filepath) {
+    public void restore(String fileId) {
 
     }
 
@@ -144,7 +144,7 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public void reclaim(int diskSpace) {
-
+        this.protocol.reclaim(diskSpace);
     }
 
 
