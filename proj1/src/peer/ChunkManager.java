@@ -1,6 +1,7 @@
 package peer;
 
 import java.io.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -48,6 +49,12 @@ public class ChunkManager {
         }
     }
 
+    /**
+     * Reduces the perceived replication degree for a file's chunk
+     * @param fileId The ID of the file
+     * @param chunkNo The number of the chunk
+     * @param senderId The ID of the peer storing it
+     */
     public void reduceChunkReplication(String fileId, int chunkNo, int senderId) {
         String key = fileId + "_" + chunkNo;
         ConcurrentSkipListSet<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ConcurrentSkipListSet<>());
@@ -106,6 +113,50 @@ public class ChunkManager {
     public void deleteDesiredReplication(String fileId) {
         this.desiredReplicationTable.remove(fileId);
         saveToDirectory();
+    }
+
+    /**
+     * Gets the order that the chunks should be deleted in
+     * @param peerId The ID of the peer reclaiming space
+     * @return A set of fileId_chunkNo strings
+     */
+    public Set<String> getDeletionOrder(int peerId) {
+        Map<String, Integer> unSortedMap = new HashMap<>();
+
+        this.perceivedReplicationTable.forEach((fileAndChunk, senders) -> {
+            if(senders.contains(peerId)) {
+                int desired = this.desiredReplicationTable.get(getFilePortion(fileAndChunk));
+                unSortedMap.put(fileAndChunk, senders.size() - desired);
+            }
+        });
+
+        LinkedHashMap<String, Integer> reverseSortedMap = new LinkedHashMap<>();
+
+        // descending order
+        unSortedMap.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEachOrdered(x -> reverseSortedMap.put(x.getKey(), x.getValue()));
+
+        return reverseSortedMap.keySet();
+    }
+
+    /**
+     * Gets the file portion of a fileId_chunkNo string
+     * @param fileAndChunk A string containing the file ID and chunk number united by an underscore ('_')
+     * @return A string containing the file ID
+     */
+    private String getFilePortion(String fileAndChunk) {
+        StringBuffer buffer = new StringBuffer();
+
+        for(int i = 0; i < fileAndChunk.length(); i++) {
+            if(fileAndChunk.charAt(i) == '_')
+                break;
+
+            buffer.append(fileAndChunk.charAt(i));
+        }
+
+        return buffer.toString();
     }
 
     /**

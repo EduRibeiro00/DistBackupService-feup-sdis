@@ -12,6 +12,7 @@ import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class Protocol1 extends Protocol {
@@ -19,6 +20,7 @@ public class Protocol1 extends Protocol {
     public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) throws IOException {
         super(peerID, "1.0", ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
     }
+
 
     @Override
     public int initiateBackup(String filePath, String modificationDate, int chunkNo, String fileContent, int replicationDeg) {
@@ -33,6 +35,7 @@ public class Protocol1 extends Protocol {
 
         return this.chunkManager.getPerceivedReplication(encodedFileId, chunkNo);
     }
+
 
     @Override
     protected void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg) {
@@ -63,6 +66,7 @@ public class Protocol1 extends Protocol {
         }
     }
 
+
     @Override
     public void initiateDelete(String filePath) {
         String encodedFileId;
@@ -92,7 +96,6 @@ public class Protocol1 extends Protocol {
     }
 
 
-
     @Override
     public void handleBackup(Message message) {
         Header header = message.getHeader();
@@ -120,6 +123,7 @@ public class Protocol1 extends Protocol {
 
     }
 
+
     @Override
     public void stored(Message message) {
         Header header = message.getHeader();
@@ -127,14 +131,17 @@ public class Protocol1 extends Protocol {
         this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), header.getSenderId());
     }
 
+
     @Override
     public void sendChunk(Message message) {
     }
+
 
     @Override
     public void receiveChunk(Message message) {
 
     }
+
 
     @Override
     public void delete(Message message) {
@@ -158,6 +165,53 @@ public class Protocol1 extends Protocol {
         this.chunkManager.deleteDesiredReplication(fileId);
         this.fileManager.removeFile(fileId);
     }
+
+
+    @Override
+    public void reclaim(int size) {
+        this.fileManager.setMaximumStorageSpace(size);
+
+        if(this.fileManager.getAvailableStorageSpace() >= 0)
+            return;
+
+        Set<String> toDelete = this.chunkManager.getDeletionOrder(this.peerID);
+
+        // fileId + _ + chunkNo
+        for(String fileAndChunk : toDelete) {
+
+            if(this.fileManager.getAvailableStorageSpace() >= 0)
+                break;
+
+            String fileId = fileAndChunk.substring(0, fileAndChunk.indexOf('_'));
+            int chunkNo = Integer.parseInt(fileAndChunk.substring(fileAndChunk.indexOf('_')+1));
+
+            this.chunkManager.reduceChunkReplication(fileId, chunkNo, this.peerID);
+
+            try {
+                this.fileManager.removeChunk(fileId, chunkNo);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) == 0) {
+                this.initiateDelete(fileId);
+                this.chunkManager.deleteDesiredReplication(fileId);
+                this.fileManager.removeFile(fileId);
+            } else {
+                Message msg = new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo);
+
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        Thread.sleep( new Random().nextInt(401));
+                        msg.send(this.ipAddressMC, this.portMC);
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
 
     @Override
     public void removed(Message message) {

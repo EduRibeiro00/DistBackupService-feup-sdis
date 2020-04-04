@@ -92,6 +92,19 @@ public class FileManager {
     }
 
     /**
+     * Sets the maximum storage space
+     * @param maximumStorageSpace The maximum storage space to be set
+     */
+    public void setMaximumStorageSpace(int maximumStorageSpace) {
+        // save used storage space
+        int usedStorageSpace = this.maximumStorageSpace - this.availableStorageSpace;
+
+        // update maximum and available storage spaces
+        this.maximumStorageSpace = maximumStorageSpace;
+        this.availableStorageSpace = this.maximumStorageSpace - usedStorageSpace;
+    }
+
+    /**
      * Returns the available storage space
      * @return an integer symbolizing the available storage space in KB
      */
