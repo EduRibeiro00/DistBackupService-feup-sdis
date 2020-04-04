@@ -348,6 +348,8 @@ public class FileManager {
             this.fileToChunks.remove(fileId);
         }
 
+        this.availableStorageSpace += this.chunkSizes.get(fileId + "_" + chunkNo);
+
         this.chunkSizes.remove(fileId + "_" + chunkNo);
 
         this.saveToDirectory();
