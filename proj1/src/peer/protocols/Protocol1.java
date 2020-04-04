@@ -64,14 +64,8 @@ public class Protocol1 extends Protocol {
     }
 
     @Override
-    public void initiateDelete(String filePath) {
-        String encodedFileId;
-        encodedFileId = this.fileManager.getHashForFile(filePath);
-        if (encodedFileId == null) {
-            return;
-        }
-
-        Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, encodedFileId);
+    public void initiateDelete(String fileId) {
+        Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
 
         for (int i = 0; i < 5; i++) {
             try {
@@ -82,13 +76,13 @@ public class Protocol1 extends Protocol {
             }
         }
 
-        for (int i = 0; i <= this.fileManager.getMaxChunkNo(encodedFileId); i++) {
-            this.chunkManager.deletePerceivedReplication(encodedFileId, i);
+        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
+            this.chunkManager.deletePerceivedReplication(fileId, i);
         }
 
-        this.chunkManager.deleteDesiredReplication(encodedFileId);
-        this.fileManager.deleteMaxChunkNo(encodedFileId);
-        this.fileManager.deleteHashForFile(filePath);
+        this.chunkManager.deleteDesiredReplication(fileId);
+        this.fileManager.deleteMaxChunkNo(fileId);
+//        this.fileManager.deleteHashForFile(filePath); //TODO: remove from HashForFile
     }
 
 

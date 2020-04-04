@@ -26,10 +26,10 @@ public class ChunkManager {
 
     /**
      * Fills the ChunkManager class with the items that exist in the directory given
-     * @param peerID path to directory were the peer saves his files
+     * @param peerId path to directory were the peer saves his files
      */
-    public ChunkManager(int peerID) {
-        this.directory = String.valueOf(peerID);
+    public ChunkManager(int peerId) {
+        this.directory = System.getProperty("user.dir") + "/peer/chunks/" + peerId + "/";
         this.loadFromDirectory();
     }
 
@@ -44,7 +44,7 @@ public class ChunkManager {
         ConcurrentSkipListSet<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ConcurrentSkipListSet<>());
 
         if(senders.add(senderId)) {
-            saveToDirectory();
+            this.saveToDirectory();
         }
     }
 
@@ -53,7 +53,7 @@ public class ChunkManager {
         ConcurrentSkipListSet<Integer> senders = this.perceivedReplicationTable.computeIfAbsent(key, value -> new ConcurrentSkipListSet<>());
 
         if(senders.remove(senderId)) {
-            saveToDirectory();
+            this.saveToDirectory();
         }
     }
 
@@ -64,7 +64,7 @@ public class ChunkManager {
      */
     public void setDesiredReplication(String fileId, int desiredRepDegree) {
         this.desiredReplicationTable.put(fileId, desiredRepDegree);
-        saveToDirectory();
+        this.saveToDirectory();
     }
 
     /**
@@ -86,7 +86,7 @@ public class ChunkManager {
         String key = fileId + "_" + chunk;
 
         if(this.perceivedReplicationTable.remove(key) != null){
-            saveToDirectory();
+            this.saveToDirectory();
         }
     }
 
@@ -105,7 +105,7 @@ public class ChunkManager {
      */
     public void deleteDesiredReplication(String fileId) {
         this.desiredReplicationTable.remove(fileId);
-        saveToDirectory();
+        this.saveToDirectory();
     }
 
     /**
@@ -114,7 +114,7 @@ public class ChunkManager {
     private void loadFromDirectory() {
         // Loading desired replication table
         try {
-            FileInputStream desRepFileIn = new FileInputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
+            FileInputStream desRepFileIn = new FileInputStream(this.directory + desiredReplicationInfo);
             ObjectInputStream desRepObjIn = new ObjectInputStream(desRepFileIn);
             this.desiredReplicationTable = (ConcurrentHashMap<String, Integer>) desRepObjIn.readObject();
             desRepFileIn.close();
@@ -125,7 +125,7 @@ public class ChunkManager {
 
         // Loading perceived replication table
         try {
-            FileInputStream percRepFileIn = new FileInputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
+            FileInputStream percRepFileIn = new FileInputStream(this.directory + perceivedReplicationInfo);
             ObjectInputStream percRepObjIn = new ObjectInputStream(percRepFileIn);
             this.perceivedReplicationTable = (ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>)percRepObjIn.readObject();
             percRepFileIn.close();
@@ -142,7 +142,7 @@ public class ChunkManager {
 
         // Saving desired replication table
         try {
-            FileOutputStream desRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + desiredReplicationInfo);
+            FileOutputStream desRepFileOut = new FileOutputStream(this.directory + desiredReplicationInfo);
             ObjectOutputStream desRepObjOut = new ObjectOutputStream(desRepFileOut);
             desRepObjOut.writeObject(desiredReplicationTable);
             desRepObjOut.close();
@@ -154,14 +154,13 @@ public class ChunkManager {
         // Saving perceived replication table
         try {
             FileOutputStream percRepFileOut = null;
-            percRepFileOut = new FileOutputStream("./chunks/" + directory + "/" + perceivedReplicationInfo);
+            percRepFileOut = new FileOutputStream(this.directory + perceivedReplicationInfo);
             ObjectOutputStream percRepObjOut = new ObjectOutputStream(percRepFileOut);
-            percRepObjOut.writeObject(perceivedReplicationTable);
+            percRepObjOut.writeObject(this.perceivedReplicationTable);
             percRepObjOut.close();
             percRepFileOut.close();
         } catch (Exception ignore) {
 
         }
     }
-
 }

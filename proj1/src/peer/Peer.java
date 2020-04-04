@@ -157,7 +157,7 @@ public class Peer implements RemoteInterface {
         StringBuilder stateInformation = new StringBuilder();
         stateInformation.append("STATE INFORMATION\n----------------\n");
         stateInformation.append(this.protocol.state());
-        stateInformation.append("\n----------------\n");
+        stateInformation.append("----------------\n");
         return stateInformation.toString();
     }
 }
