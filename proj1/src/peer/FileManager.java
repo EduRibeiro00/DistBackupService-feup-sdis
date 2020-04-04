@@ -248,7 +248,7 @@ public class FileManager {
      * @return A string containing the path
      */
     public String getDirectoryPath(String dirName) {
-        return System.getProperty("user.dir") + "/peer/" + dirName + "/" + this.peerId;
+        return System.getProperty("user.dir") + "/peer/" + dirName + "/" + this.peerId + "/";
     }
 
     /**
@@ -259,7 +259,7 @@ public class FileManager {
      */
     public String getChunkPath(String fileId, int chunkNo) {
         String storageDirectoryPath = getDirectoryPath("chunks");
-        return storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
+        return storageDirectoryPath + fileId + "_" + Integer.toString(chunkNo);
     }
 
     /**
