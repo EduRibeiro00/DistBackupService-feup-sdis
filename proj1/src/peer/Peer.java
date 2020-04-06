@@ -82,12 +82,14 @@ public class Peer implements RemoteInterface {
             return;
         }
 
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        String modificationDate = sdf.format(file.lastModified());
+
+        this.protocol.deleteIfOutdated(filepath, modificationDate);
+
         char[] fileContent = new char[64000];
         int chunkNo = 0;
         int minReplication = -1;
-
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-        String modificationDate = sdf.format(file.lastModified());
 
         try {
             int charsRead, lastRead = 0;

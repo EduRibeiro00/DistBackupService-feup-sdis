@@ -56,6 +56,7 @@ public abstract class Protocol {
     protected abstract void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg);
     public abstract void handleBackup(Message message);
     public abstract void stored(Message message);
+    public abstract void deleteIfOutdated(String filepath, String modificationDate);
 
     // Restore
     public abstract void sendChunk(Message message);

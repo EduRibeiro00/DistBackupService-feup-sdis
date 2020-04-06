@@ -34,6 +34,25 @@ public class Protocol1 extends Protocol {
         return this.chunkManager.getPerceivedReplication(encodedFileId, chunkNo);
     }
 
+
+    @Override
+    public void deleteIfOutdated(String filepath, String modificationDate) {
+        String fileID = null;
+        try {
+            fileID = Header.encodeFileId(filepath + modificationDate);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // if hashes are diferent, then the file has been modified and the chunks
+        // previously backed up are now outdated. The system will delete them
+        if (!fileID.equals(this.fileManager.getHashForFile(filepath))) {
+            this.initiateDelete(filepath);
+        }
+    }
+
+
     @Override
     protected void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg) {
         this.fileManager.setMaxChunkNo(fileId, chunkNo);
