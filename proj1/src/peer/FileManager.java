@@ -151,12 +151,12 @@ public class FileManager {
      * @param chunkContent The chunk's content
      * @return true if successful, false if otherwise
      */
-    public boolean storeChunk(String fileId, int chunkNo, String chunkContent) throws IOException {
+    public boolean storeChunk(String fileId, int chunkNo, byte[] chunkContent) throws IOException {
         if(this.isChunkStored(fileId, chunkNo)) {
             return true;
         }
 
-        int chunkSize = chunkContent.getBytes().length / 1024;
+        int chunkSize = chunkContent.length / 1000;
 
         // log storage
         if (this.availableStorageSpace < chunkSize) {
@@ -168,7 +168,7 @@ public class FileManager {
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
         chunk.createNewFile();
-        FileWriter chunkWriter = new FileWriter(chunk);
+        OutputStream chunkWriter = new FileOutputStream(chunk);
         chunkWriter.write(chunkContent);
         chunkWriter.close();
 
@@ -186,32 +186,15 @@ public class FileManager {
      * @param chunkNo The number of the chunk
      * @return A string with the chunk's content
      */
-    public String getChunk(String fileId, int chunkNo) {
+    public byte[] getChunk(String fileId, int chunkNo) throws IOException {
         if(this.isChunkStored(fileId, chunkNo)) {
-            return "";
+            return new byte[0];
         }
 
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunkFile = new File(chunkPath);
 
-        FileReader chunkReader;
-        try {
-            chunkReader = new FileReader(chunkFile);
-        } catch (FileNotFoundException e) {
-            System.err.println("File not found");
-            return "";
-        }
-
-        char[] chunkContent = new char[64000];
-
-        try {
-            chunkReader.read(chunkContent, 0, 64000);
-        } catch (IOException e) {
-            System.err.println("Error reading file");
-            return "";
-        }
-
-        return chunkContent.toString();
+        return Files.readAllBytes(chunkFile.toPath());
     }
 
 
@@ -321,7 +304,7 @@ public class FileManager {
      * @return A list with the chunks of the file
      */
     public ConcurrentSkipListSet<Integer> getFileChunks(String fileId) {
-        return this.fileToChunks.get(fileId);
+        return this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
     }
 
     /**
@@ -448,7 +431,9 @@ public class FileManager {
                 String filename = fileID + "_" + chunkNo;
                 File chunk = new File(this.getDirectoryPath("chunks") + filename);
                 if (chunk.exists()) {
-                    this.chunkSizes.put(filename, (int) chunk.length() / 1024);
+                    long size = chunk.length() / 1000;
+                    this.chunkSizes.put(filename, (int) size);
+                    this.availableStorageSpace -= size;
                 }
             }
         }

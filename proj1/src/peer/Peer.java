@@ -5,12 +5,11 @@ import peer.messages.MessageHandler;
 import peer.protocols.Protocol;
 import peer.protocols.Protocol1;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 
 
 /**
@@ -19,7 +18,9 @@ import java.text.SimpleDateFormat;
 public class Peer implements RemoteInterface {
     private final static int N_THREADS_PER_CHANNEL = 10;    // number of threads ready for processing packets in each channel
     private final static int BUFFER_SIZE_CONTROL = 2000;     // buffer size for messages received in the control socket
-    private final static int BUFFER_SIZE = 64000;           // buffer size for messages received in the control socket
+    private final static int BUFFER_SIZE = 64500;           // buffer size for messages received in the control socket
+    public static final int CHUNK_SIZE = 64000;
+
 
     private Protocol protocol;  // protocol responsible for the peer behaviours
 
@@ -74,44 +75,52 @@ public class Peer implements RemoteInterface {
         }
 
         File file = new File(filepath);
-        FileReader fileReader;
-        try {
-            fileReader = new FileReader(file);
-        } catch (FileNotFoundException e) {
+        if(!file.exists()){
             System.err.println("File not found");
             return;
         }
+
+        byte[] totalFileContent;
+        try {
+            totalFileContent = Files.readAllBytes(file.toPath());
+        } catch (IOException e) {
+            System.err.println("Error while trying to read from file");
+            return;
+        }
+
 
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
         String modificationDate = sdf.format(file.lastModified());
 
         this.protocol.deleteIfOutdated(filepath, modificationDate);
 
-        char[] fileContent = new char[64000];
         int chunkNo = 0;
         int minReplication = -1;
 
-        try {
-            int charsRead, lastRead = 0;
-            while ((charsRead = fileReader.read(fileContent, 0, 64000)) != -1) {
-                int replication = this.protocol.initiateBackup(filepath,
-                        modificationDate,
-                        chunkNo,
-                        new String(fileContent, 0, charsRead),
-                        replicationDegree);
-
-                if (minReplication == -1 || minReplication > replication) {
-                    minReplication = replication;
-                }
-
-                chunkNo++;
-                lastRead = charsRead;
+        int currentIndex = 0, lastIndex = CHUNK_SIZE;
+        
+        for (; currentIndex < totalFileContent.length; lastIndex += CHUNK_SIZE) {
+            if(lastIndex > totalFileContent.length) {
+                lastIndex = totalFileContent.length;
             }
-            if(lastRead == 64000) {
-                this.protocol.initiateBackup(filepath, modificationDate, chunkNo, "", replicationDegree);
+
+            byte[] chunkContent = Arrays.copyOfRange(totalFileContent, currentIndex, lastIndex);
+            int replication = this.protocol.initiateBackup(filepath,
+                    modificationDate,
+                    chunkNo,
+                    chunkContent,
+                    replicationDegree);
+
+            if (minReplication == -1 || minReplication > replication) {
+                minReplication = replication;
             }
-        } catch (IOException e) {
-            System.err.println("Error while reading file " + filepath);
+
+            chunkNo++;
+            currentIndex = lastIndex;
+        }
+
+        if(totalFileContent.length % CHUNK_SIZE == 0) {
+            this.protocol.initiateBackup(filepath, modificationDate, chunkNo, new byte[0], replicationDegree);
         }
 
         System.out.println("Replication degree achieved: " + (minReplication == -1 ? 0 : minReplication));

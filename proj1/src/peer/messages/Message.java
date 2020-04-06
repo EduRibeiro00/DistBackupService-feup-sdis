@@ -1,5 +1,7 @@
 package peer.messages;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.io.IOException;
@@ -14,28 +16,21 @@ public class Message {
     private final String crlf = "\r\n";           /** Carriage return and line feed, to  */
     private final String lastCRLF = "\r\n\r\n";   /** Double CRLF */
     private Header header;                        /** Header of the message */
-    private String body;                          /** Body of the message */
+    private byte[] body = new byte[0];                          /** Body of the message */
 
 
     /**
      * Constructor for message receiving
      * @param data byte array with received data
-     * @throws Exception
      */
     public Message(byte[] data) {
         String message = new String(data, StandardCharsets.ISO_8859_1);
-        ArrayList<String> split = new ArrayList<>(Arrays.asList(message.split(this.lastCRLF)));
+        ArrayList<String> split = new ArrayList<>(Arrays.asList(message.split(this.lastCRLF, 2)));
 
         this.header = new Header(new ArrayList<>(Arrays.asList(split.remove(0).split(" "))));
 
-        if (split.size() == 0) {
-            this.body = "";
-        } else {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String string: split) {
-                stringBuilder.append(string);
-            }
-            this.body = stringBuilder.toString();
+        if (split.size() != 0) {
+            this.body = split.get(0).getBytes(StandardCharsets.ISO_8859_1);
         }
     }
 
@@ -49,7 +44,7 @@ public class Message {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      * @param repDeg the desired replication degree of the file's chunk (may be unused)
      */
-    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg, String body) {
+    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg, byte[] body) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo, repDeg);
         this.body = body;
     }
@@ -63,7 +58,7 @@ public class Message {
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unused)
      */
-    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, String body) {
+    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, byte[] body) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo);
         this.body = body;
     }
@@ -79,7 +74,6 @@ public class Message {
      */
     public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo);
-        this.body = "";
     }
 
 
@@ -92,7 +86,6 @@ public class Message {
      */
     public Message(String version, MessageType msgType, int senderId, String fileId) {
         this.header = new Header(version, msgType, senderId, fileId);
-        this.body = "";
     }
 
 
@@ -100,9 +93,12 @@ public class Message {
      * Converts the full message to a byte array
      * @return byte array of the converted message
      */
-    public byte[] convertToBytes() {
-        String total = header.toString() + crlf + body;
-        return total.getBytes(StandardCharsets.ISO_8859_1);
+    public byte[] convertToBytes() throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        stream.write(header.toString().getBytes(StandardCharsets.ISO_8859_1));
+        stream.write(crlf.getBytes(StandardCharsets.ISO_8859_1));
+        stream.write(body);
+        return stream.toByteArray();
     }
 
 
@@ -139,7 +135,7 @@ public class Message {
      * Retrieves the body of the message (if any).
      * @return
      */
-    public String getBody() {
+    public byte[] getBody() {
         return body;
     }
 }

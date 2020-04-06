@@ -23,7 +23,7 @@ public class Protocol1 extends Protocol {
 
 
     @Override
-    public int initiateBackup(String filePath, String modificationDate, int chunkNo, String fileContent, int replicationDeg) {
+    public int initiateBackup(String filePath, String modificationDate, int chunkNo, byte[] fileContent, int replicationDeg) {
         String encodedFileId = null;
         try {
             encodedFileId = this.fileManager.insertHashForFile(filePath, modificationDate);
@@ -56,7 +56,7 @@ public class Protocol1 extends Protocol {
 
 
     @Override
-    protected void backupChunk(String fileId, int chunkNo, String fileContent, int replicationDeg) {
+    protected void backupChunk(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) {
         this.fileManager.setMaxChunkNo(fileId, chunkNo);
         this.chunkManager.setDesiredReplication(fileId, replicationDeg);
 
@@ -232,48 +232,53 @@ public class Protocol1 extends Protocol {
         int perceivedReplication = this.chunkManager.getPerceivedReplication(fileId, chunkNo);
         int desiredReplication = this.chunkManager.getDesiredReplication(fileId);
 
-        if(this.fileManager.isChunkStored(fileId, chunkNo) && desiredReplication > perceivedReplication) {
-            String chunkContent = this.fileManager.getChunk(fileId, chunkNo);
-
-            MulticastSocket mCastSkt;
-            try {
-                mCastSkt = new MulticastSocket(this.portMDB);
-                mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDB));
-                mCastSkt.setTimeToLive(1);
-            } catch (IOException e) {
-                e.printStackTrace(); // TODO: change this
-                return;
-            }
-
-            long waitTime = new Random().nextInt(401);
-            try {
-                mCastSkt.setSoTimeout((int) waitTime);
-            } catch (SocketException e) {
-                e.printStackTrace(); // TODO: change this
-                return;
-            }
-
-            byte[] buffer = new byte[64500];
-            DatagramPacket packet = new DatagramPacket(buffer, 64500);
-            try {
-                while(waitTime > 0) {
-                    long before = System.currentTimeMillis();
-                    mCastSkt.receive(packet);
-                    waitTime -= System.currentTimeMillis() - before;
-
-                    Message msg = new Message(packet.getData());
-                    if(msg.getHeader().getMessageType() == MessageType.PUTCHUNK &&
-                            msg.getHeader().getFileId().equals(fileId) &&
-                            msg.getHeader().getChunkNo() == chunkNo) {
-                        return;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace(); // TODO: change this
-            }
-
-            this.backupChunk(fileId, chunkNo, chunkContent, desiredReplication);
+        if(!this.fileManager.isChunkStored(fileId, chunkNo) || desiredReplication <= perceivedReplication) {
+            return;
         }
+
+
+        byte[] chunkContent;
+        MulticastSocket mCastSkt;
+        try {
+            chunkContent = this.fileManager.getChunk(fileId, chunkNo);
+
+            mCastSkt = new MulticastSocket(this.portMDB);
+            mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDB));
+            mCastSkt.setTimeToLive(1);
+        } catch (IOException e) {
+            e.printStackTrace(); // TODO: change this
+            return;
+        }
+
+        long waitTime = new Random().nextInt(401);
+        try {
+            mCastSkt.setSoTimeout((int) waitTime);
+        } catch (SocketException e) {
+            e.printStackTrace(); // TODO: change this
+            return;
+        }
+
+        byte[] buffer = new byte[64500];
+        DatagramPacket packet = new DatagramPacket(buffer, 64500);
+        try {
+            while(waitTime > 0) {
+                long before = System.currentTimeMillis();
+                mCastSkt.receive(packet);
+                waitTime -= System.currentTimeMillis() - before;
+
+                Message msg = new Message(packet.getData());
+                if(msg.getHeader().getMessageType() == MessageType.PUTCHUNK &&
+                        msg.getHeader().getFileId().equals(fileId) &&
+                        msg.getHeader().getChunkNo() == chunkNo) {
+                    return;
+                }
+                mCastSkt.setSoTimeout((int) waitTime);
+            }
+        } catch (IOException e) {
+            e.printStackTrace(); // TODO: change this
+        }
+
+        this.backupChunk(fileId, chunkNo, chunkContent, desiredReplication);
     }
 
 
