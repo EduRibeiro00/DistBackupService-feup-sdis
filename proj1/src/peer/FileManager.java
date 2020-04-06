@@ -92,6 +92,19 @@ public class FileManager {
     }
 
     /**
+     * Sets the maximum storage space
+     * @param maximumStorageSpace The maximum storage space to be set
+     */
+    public void setMaximumStorageSpace(int maximumStorageSpace) {
+        // save used storage space
+        int usedStorageSpace = this.maximumStorageSpace - this.availableStorageSpace;
+
+        // update maximum and available storage spaces
+        this.maximumStorageSpace = maximumStorageSpace;
+        this.availableStorageSpace = this.maximumStorageSpace - usedStorageSpace;
+    }
+
+    /**
      * Returns the available storage space
      * @return an integer symbolizing the available storage space in KB
      */
@@ -248,7 +261,7 @@ public class FileManager {
      * @return A string containing the path
      */
     public String getDirectoryPath(String dirName) {
-        return System.getProperty("user.dir") + "/peer/" + dirName + "/" + this.peerId;
+        return System.getProperty("user.dir") + "/peer/" + dirName + "/" + this.peerId + "/";
     }
 
     /**
@@ -259,7 +272,7 @@ public class FileManager {
      */
     public String getChunkPath(String fileId, int chunkNo) {
         String storageDirectoryPath = getDirectoryPath("chunks");
-        return storageDirectoryPath + "/" + fileId + "_" + Integer.toString(chunkNo);
+        return storageDirectoryPath + fileId + "_" + Integer.toString(chunkNo);
     }
 
     /**
@@ -334,6 +347,8 @@ public class FileManager {
         if (chunks.size() == 0) {
             this.fileToChunks.remove(fileId);
         }
+
+        this.availableStorageSpace += this.chunkSizes.get(fileId + "_" + chunkNo);
 
         this.chunkSizes.remove(fileId + "_" + chunkNo);
 

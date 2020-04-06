@@ -22,7 +22,7 @@ public abstract class Protocol {
     protected String ipAddressMDR; 
     protected int portMDR;
 
-
+    //Constructor
     public Protocol(int peerID, String protocolVersion, 
                     String ipAddressMC, int portMC, 
                     String ipAddressMDB, int portMDB, 
@@ -63,10 +63,11 @@ public abstract class Protocol {
     public abstract void receiveChunk(Message message);
 
     // Delete
-    public abstract void initiateDelete(String filePath);
+    public abstract void initiateDelete(String fileId);
     public abstract void delete(Message message);
 
     // Reclaim
+    public abstract void reclaim(int newMaximumStorageCapacity);
     public abstract void removed(Message message);
 
     // State
