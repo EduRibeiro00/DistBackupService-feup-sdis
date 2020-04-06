@@ -174,7 +174,6 @@ public class FileManager {
 
         this.availableStorageSpace -= chunkSize;
 
-        this.setMaxChunkNo(fileId, chunkNo);
         this.chunkSizes.put(fileId + "_" + chunkNo, chunkSize);
 
         return true;    //TODO: add error checking
@@ -207,6 +206,7 @@ public class FileManager {
     public String insertHashForFile(String filepath, String modificationDate) throws NoSuchAlgorithmException {
         String fileID = Header.encodeFileId(filepath + modificationDate);
         this.hashBackedUpFiles.put(filepath, fileID);
+        this.saveToDirectory();
         return fileID;
     }
 
@@ -225,18 +225,20 @@ public class FileManager {
      */
     public void deleteHashForFile(String filepath) {
         this.hashBackedUpFiles.remove(filepath);
+        this.saveToDirectory();
     }
 
-
     /**
-     * Return the content of a chunk
-     * @param fileId The ID of the file
-     * @param chunkNo The number of the chunk
-     * @return A string with the chunk's content
+     * Deletes the filepath of a given fileId
+     * @param fileId The file hash
      */
-    public String retrieveChunk(String fileId, int chunkNo) throws IOException {
-        String chunkPath = getChunkPath(fileId, chunkNo);
-        return Files.readString(Paths.get(chunkPath), StandardCharsets.US_ASCII);
+    public void deleteFileForHash(String fileId) {
+        String filePath = this.hashBackedUpFiles.search(1, (key, value) -> value.equals(fileId) ? key : null);
+
+        if(filePath != null) {
+            this.hashBackedUpFiles.remove(filePath);
+            this.saveToDirectory();
+        }
     }
 
     /**
@@ -325,8 +327,6 @@ public class FileManager {
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.get(fileId);
         chunks.removeIf(elem -> elem.equals(chunkNo));
 
-        System.out.println(chunks.size());
-
         if (chunks.size() == 0) {
             this.fileToChunks.remove(fileId);
         }
@@ -345,6 +345,7 @@ public class FileManager {
      * @param fileId The ID of the file
      */
     public void removeFile(String fileId) {
+        this.deleteFileForHash(fileId);
         this.fileToChunks.remove(fileId);
         this.highestChunks.remove(fileId);
 
@@ -451,33 +452,25 @@ public class FileManager {
             highestChunksObjOut.writeObject(this.highestChunks);
             highestChunksObjOut.close();
             highestChunksFileOut.close();
-        } catch (Exception ignore) {
-
-        }
+        } catch (Exception ignore) { }
 
         // Saving file to chunks table
         try {
-            FileOutputStream fileToChunkFileOut = null;
-            fileToChunkFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + fileToChunksInfo);
+            FileOutputStream fileToChunkFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + fileToChunksInfo);
             ObjectOutputStream fileToChunkObjOut = new ObjectOutputStream(fileToChunkFileOut);
             fileToChunkObjOut.writeObject(this.fileToChunks);
             fileToChunkObjOut.close();
             fileToChunkFileOut.close();
-        } catch (Exception ignore) {
-
-        }
+        } catch (Exception ignore) { }
 
         // Saving hash backed up files table
         try {
-            FileOutputStream hashBackedUpFilesFileOut = null;
-            hashBackedUpFilesFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + hashBackedUpFilesInfo);
+            FileOutputStream hashBackedUpFilesFileOut = new FileOutputStream(this.getDirectoryPath("chunks") + hashBackedUpFilesInfo);
             ObjectOutputStream hashBackedUpFilesObjOut = new ObjectOutputStream(hashBackedUpFilesFileOut);
             hashBackedUpFilesObjOut.writeObject(this.hashBackedUpFiles);
             hashBackedUpFilesObjOut.close();
             hashBackedUpFilesFileOut.close();
-        } catch (Exception ignore) {
-
-        }
+        } catch (Exception ignore) { }
     }
 
 }

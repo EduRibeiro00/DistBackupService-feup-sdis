@@ -63,7 +63,7 @@ public abstract class Protocol {
     public abstract void receiveChunk(Message message);
 
     // Delete
-    public abstract void initiateDelete(String fileId);
+    public abstract void initiateDelete(String filepath);
     public abstract void delete(Message message);
 
     // Reclaim

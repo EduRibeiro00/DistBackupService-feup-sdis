@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -47,9 +48,10 @@ public class Protocol1 extends Protocol {
             return;
         }
 
-        // if hashes are diferent, then the file has been modified and the chunks
+        // if hashes are different, then the file has been modified and the chunks
         // previously backed up are now outdated. The system will delete them
-        if (!fileID.equals(this.fileManager.getHashForFile(filepath))) {
+        String hash = this.fileManager.getHashForFile(filepath);
+        if (!hash.equals("") && !fileID.equals(hash)) {
             this.initiateDelete(filepath);
         }
     }
@@ -83,33 +85,11 @@ public class Protocol1 extends Protocol {
 
 
     @Override
-    public void initiateDelete(String fileId) {
-        Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
-
-        for (int i = 0; i < 5; i++) {
-            try {
-                msg.send(this.ipAddressMDB, this.portMDB);
-                Thread.sleep(this.TIMEOUT >> 1);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
-            this.chunkManager.deletePerceivedReplication(fileId, i);
-        }
-
-        this.chunkManager.deleteDesiredReplication(fileId);
-        this.fileManager.deleteMaxChunkNo(fileId);
-//        this.fileManager.deleteHashForFile(filePath); //TODO: remove from HashForFile
-    }
-
-
-    @Override
     public void handleBackup(Message message) {
         Header header = message.getHeader();
 
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
+        this.fileManager.setMaxChunkNo(header.getFileId(), header.getChunkNo());
 
         try {
             if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
@@ -126,8 +106,8 @@ public class Protocol1 extends Protocol {
                     header.getFileId(),
                     header.getChunkNo()
             ).send(this.ipAddressMC, this.portMC);
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
@@ -153,23 +133,52 @@ public class Protocol1 extends Protocol {
 
 
     @Override
+    public void initiateDelete(String filePath) {
+        String fileId = this.fileManager.getHashForFile(filePath);
+        if(fileId == null) {
+            System.err.println("Unknown filepath given");
+            return;
+        }
+
+        Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
+
+        for (int i = 0; i < 5; i++) {
+            try {
+                msg.send(this.ipAddressMDB, this.portMDB);
+                Thread.sleep(this.TIMEOUT >> 1);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
+            try {
+                this.fileManager.removeChunk(fileId, i);
+            } catch (IOException ignored) {}
+            this.chunkManager.deletePerceivedReplication(fileId, i);
+        }
+
+        this.chunkManager.deleteDesiredReplication(fileId);
+        this.fileManager.deleteMaxChunkNo(fileId);
+        this.fileManager.deleteHashForFile(filePath);
+    }
+
+
+    @Override
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
 
-        ConcurrentSkipListSet<Integer> chunks = this.fileManager.getFileChunks(fileId);
-
         for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
-            this.chunkManager.deletePerceivedReplication(fileId, (int) chunks.toArray()[i]);
+            this.chunkManager.deletePerceivedReplication(fileId, i);
 
             try {
-                this.fileManager.removeChunk(fileId, (int) chunks.toArray()[i]);
+                this.fileManager.removeChunk(fileId, i);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
-        // TODO: ver melhor isto
-        System.out.println(this.fileManager.getFileChunks(fileId) == null ? "Successfully deleted all chunks" : "Failed to delete all chunks");
+
+        System.out.println(this.fileManager.getFileChunks(fileId).size() == 0 ? "Successfully deleted all chunks" : "Failed to delete all chunks");
 
         this.chunkManager.deleteDesiredReplication(fileId);
         this.fileManager.removeFile(fileId);
@@ -178,6 +187,7 @@ public class Protocol1 extends Protocol {
 
     @Override
     public void reclaim(int newMaximumStorageCapacity) {
+        ArrayList<String> deletedFiles = new ArrayList<>();
         this.fileManager.setMaximumStorageSpace(newMaximumStorageCapacity);
 
         if(this.fileManager.getAvailableStorageSpace() >= 0)
@@ -203,9 +213,10 @@ public class Protocol1 extends Protocol {
             }
 
             if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) == 0) {
-                this.initiateDelete(fileId);
-                this.chunkManager.deleteDesiredReplication(fileId);
-                this.fileManager.removeFile(fileId);
+                if(!deletedFiles.contains(fileId)) {
+                    deletedFiles.add(fileId);
+                    this.initiateDelete(fileId);
+                }
             } else {
                 Message msg = new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo);
 
