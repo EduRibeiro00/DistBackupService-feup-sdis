@@ -320,22 +320,14 @@ public class Protocol1 extends Protocol {
                 e.printStackTrace();
             }
 
-            // TODO: é preciso fazer? faz sentido? como fazer?
-            if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) == 0) {
-                if(!deletedFiles.contains(fileId)) {
-                    deletedFiles.add(fileId);
-                    this.initiateDelete(fileId);
-                }
-            } else {
-                Message msg = new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo);
+            Message msg = new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo);
 
-                for (int i = 0; i < 5; i++) {
-                    try {
-                        Thread.sleep( new Random().nextInt(401));
-                        msg.send(this.ipAddressMC, this.portMC);
-                    } catch (IOException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            for (int i = 0; i < 5; i++) {
+                try {
+                    Thread.sleep( new Random().nextInt(401));
+                    msg.send(this.ipAddressMC, this.portMC);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
