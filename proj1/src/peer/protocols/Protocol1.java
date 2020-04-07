@@ -53,7 +53,7 @@ public class Protocol1 extends Protocol {
         // if hashes are different, then the file has been modified and the chunks
         // previously backed up are now outdated. The system will delete them
         String hash = this.fileManager.getHashForFile(filepath);
-        if (!hash.equals("") && !fileID.equals(hash)) {
+        if (hash != null && !fileID.equals(hash)) {
             this.initiateDelete(filepath);
         }
     }
