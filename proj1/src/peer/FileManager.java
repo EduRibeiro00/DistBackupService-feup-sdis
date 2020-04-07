@@ -369,7 +369,7 @@ public class FileManager {
             return;
         }
 
-        for(int i = 0; i < fileRestorer.getMaxNumChunks(); i++) {
+        for(int i = 0; i <= fileRestorer.getMaxNumChunks(); i++) {
             byte[] chunkContent = fileRestorer.getChunkForNumber(i);
             if (chunkContent == null) {
                 System.err.println("Error in file restore: chunk " + i + " not found");
@@ -390,6 +390,7 @@ public class FileManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
 

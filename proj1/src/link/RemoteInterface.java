@@ -19,18 +19,18 @@ public interface RemoteInterface extends Remote {
 
     /**
      * Restore request.
-     * @param fileId filepath of the file we want to backup
+     * @param filepath filepath of the file we want to backup
      * @throws RemoteException
      */
-    void restore(String fileId) throws RemoteException;
+    void restore(String filepath) throws RemoteException;
 
 
     /**
      * Delete request.
-     * @param fileId filepath of the file we want to backup
+     * @param filepath filepath of the file we want to backup
      * @throws RemoteException
      */
-    void delete(String fileId) throws RemoteException;
+    void delete(String filepath) throws RemoteException;
 
 
     /**

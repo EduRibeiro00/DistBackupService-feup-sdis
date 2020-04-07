@@ -128,23 +128,23 @@ public class Peer implements RemoteInterface {
 
     /**
      * Implementation of the delete request.
-     * @param fileId filepath of the file we want to delete
+     * @param filepath filepath of the file we want to delete
      * @throws RemoteException
      */
     @Override
-    public void delete(String fileId) {
-        this.protocol.initiateDelete(fileId);
+    public void delete(String filepath) {
+        this.protocol.initiateDelete(filepath);
     }
 
 
     /**
      * Implementation of the restore request.
-     * @param fileId filepath of the file we want to restore
+     * @param filepath filepath of the file we want to restore
      * @throws RemoteException
      */
     @Override
-    public void restore(String fileId) {
-
+    public void restore(String filepath) {
+        this.protocol.initiateRestore(filepath);
     }
 
 

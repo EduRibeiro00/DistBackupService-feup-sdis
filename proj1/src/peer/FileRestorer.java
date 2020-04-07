@@ -21,7 +21,7 @@ public class FileRestorer {
 
     public boolean insertChunkForRestore(int chunkNo, byte[] chunkContent) {
         this.fileChunks.put(chunkNo, chunkContent);
-        return this.fileChunks.size() == this.maxNumChunks;
+        return this.fileChunks.size() == this.maxNumChunks+1;
     }
 
     public String getFilename() {

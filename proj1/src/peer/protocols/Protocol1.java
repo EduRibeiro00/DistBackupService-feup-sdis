@@ -146,7 +146,8 @@ public class Protocol1 extends Protocol {
         this.chunkManager.createFileRestorer(filename, fileId, maxNumChunks);
 
         // send a GETCHUNK for each chunk of the file
-        for (int i = 0; i < maxNumChunks; i++) {
+        for (int i = 0; i <= maxNumChunks; i++) {
+
             try {
                 new Message(this.protocolVersion, MessageType.GETCHUNK, this.peerID, fileId, i).send(
                         this.ipAddressMC, this.portMC
@@ -157,6 +158,7 @@ public class Protocol1 extends Protocol {
                 e.printStackTrace();
             }
         }
+
     }
 
     @Override
@@ -204,9 +206,7 @@ public class Protocol1 extends Protocol {
                     }
                     mCastSkt.setSoTimeout((int) waitTime);
                 }
-            } catch (IOException e) {
-                e.printStackTrace(); // TODO: change this
-            }
+            } catch (IOException ignore) {}
 
             // send message with chunk
             try {
