@@ -24,6 +24,14 @@ public class ChunkManager {
      */
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> perceivedReplicationTable;
 
+    /**
+     * Temporarily stores the chunks of a file this peer is trying to restore
+     * key = fileID
+     * value = object that contains information/data about the restoring procedure
+     */
+    private ConcurrentHashMap<String, FileRestorer> fileRestoringTable;
+
+
 
     /**
      * Fills the ChunkManager class with the items that exist in the directory given
@@ -115,6 +123,43 @@ public class ChunkManager {
         this.saveToDirectory();
     }
 
+
+    /**
+     * Function that creates a new file restorer for the restoring of a file
+     * @param filename Filename
+     * @param fileId ID of the file
+     * @param maxNumChunks Maximum number of chunks of the file
+     */
+    public void createFileRestorer(String filename, String fileId, int maxNumChunks) {
+        this.fileRestoringTable.put(fileId, new FileRestorer(filename, fileId, maxNumChunks));
+    }
+
+
+    /**
+     * Function for temporarily saving a chunk when the peer is trying to restore a file
+     * @param fileId
+     * @param chunkNo
+     * @param chunkContent
+     * @returns File restorer object if all chunks of the file are saved, and the peer is ready to restore the file
+     */
+    public FileRestorer insertChunkForRestore(String fileId, int chunkNo, byte[] chunkContent) {
+        FileRestorer fileRestorer = this.fileRestoringTable.get(fileId);
+        if (fileRestorer != null && fileRestorer.insertChunkForRestore(chunkNo, chunkContent)) {
+            return fileRestorer;
+        }
+
+        return null;
+    }
+
+    /**
+     * Function to delete chunks stored temporarily when the peers restores a file
+     * @param fileId
+     */
+    public void deleteChunksForRestore(String fileId) {
+        this.fileRestoringTable.remove(fileId);
+    }
+
+
     /**
      * Gets the order that the chunks should be deleted in
      * @param peerId The ID of the peer reclaiming space
@@ -163,6 +208,9 @@ public class ChunkManager {
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
     private void loadFromDirectory() {
+        // file restoring table
+        this.fileRestoringTable = new ConcurrentHashMap<>();
+
         // Loading desired replication table
         try {
             FileInputStream desRepFileIn = new FileInputStream(this.directory + desiredReplicationInfo);

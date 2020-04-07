@@ -16,7 +16,7 @@ public class ReceiverThread implements Runnable {
     private int bufSize;                        // buffer size
     private ExecutorService service;            // ExecutorService responsible for threads
 
-    public ReceiverThread(MessageHandler messageHandler, String ipAddress, int port,int bufSize, int nThreads) throws IOException {
+    public ReceiverThread(MessageHandler messageHandler, String ipAddress, int port, int bufSize, int nThreads) throws IOException {
         this.messageHandler = messageHandler;
 
         this.mCastSkt = new MulticastSocket(port);

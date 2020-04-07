@@ -1,5 +1,6 @@
 package peer.protocols;
 
+import peer.FileRestorer;
 import peer.messages.Header;
 import peer.messages.Message;
 import peer.messages.MessageType;
@@ -9,6 +10,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -122,19 +124,125 @@ public class Protocol1 extends Protocol {
 
 
     @Override
+    public void initiateRestore(String filepath) {
+        // get the file ID of the chunk
+        String fileId = this.fileManager.getHashForFile(filepath);
+        if(fileId == null) {
+            System.err.println("Unknown filepath given");
+            return;
+        }
+
+        // get the number of chunks this file was divided in
+        int maxNumChunks = this.fileManager.getMaxChunkNo(fileId);
+        if (maxNumChunks == -1) {
+            System.err.println("No information for this file's chunks");
+            return;
+        }
+
+        // extract filename from filepath
+        String filename = Paths.get(filepath).getFileName().toString();
+
+        // create new file restorer
+        this.chunkManager.createFileRestorer(filename, fileId, maxNumChunks);
+
+        // send a GETCHUNK for each chunk of the file
+        for (int i = 0; i < maxNumChunks; i++) {
+            try {
+                new Message(this.protocolVersion, MessageType.GETCHUNK, this.peerID, fileId, i).send(
+                        this.ipAddressMC, this.portMC
+                );
+            }
+            catch (IOException e) {
+                System.err.println("Error sending message");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
     public void sendChunk(Message message) {
+        Header header = message.getHeader();
+        String fileId = header.getFileId();
+        int chunkNo = header.getChunkNo();
+
+        // if the peer has that chunk saved
+        if (this.fileManager.isChunkStored(fileId, chunkNo)) {
+            byte[] chunkContent = null;
+            MulticastSocket mCastSkt;
+            try {
+                chunkContent = this.fileManager.getChunk(fileId, chunkNo);
+
+                mCastSkt = new MulticastSocket(this.portMDR);
+                mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDR));
+                mCastSkt.setTimeToLive(1);
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: change this
+                return;
+            }
+
+            long waitTime = new Random().nextInt(401);
+            try {
+                mCastSkt.setSoTimeout((int) waitTime);
+            } catch (SocketException e) {
+                e.printStackTrace(); // TODO: change this
+                return;
+            }
+
+            byte[] buffer = new byte[64500];
+            DatagramPacket packet = new DatagramPacket(buffer, 64500);
+            try {
+                while(waitTime > 0) {
+                    long before = System.currentTimeMillis();
+                    mCastSkt.receive(packet);
+                    waitTime -= System.currentTimeMillis() - before;
+
+                    Message msg = new Message(packet.getData());
+                    if(msg.getHeader().getMessageType() == MessageType.CHUNK &&
+                            msg.getHeader().getFileId().equals(fileId) &&
+                            msg.getHeader().getChunkNo() == chunkNo) {
+                        return;
+                    }
+                    mCastSkt.setSoTimeout((int) waitTime);
+                }
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: change this
+            }
+
+            // send message with chunk
+            try {
+                new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkContent).send(
+                        this.ipAddressMDR, this.portMDR
+                );
+            } catch (IOException e) {
+                System.err.println("Error sending chunk message");
+                e.printStackTrace();
+            }
+        }
     }
 
 
     @Override
     public void receiveChunk(Message message) {
+        Header header = message.getHeader();
+        String fileId = header.getFileId();
+        int chunkNo = header.getChunkNo();
+        byte[] chunkContent = message.getBody();
 
+        // Saves the chunk
+        FileRestorer fileRestorer = this.chunkManager.insertChunkForRestore(fileId, chunkNo, chunkContent);
+
+        // If all the file's chunks were saved
+        if (fileRestorer != null) {
+            // creates and restores the file
+            this.fileManager.restoreFileFromChunks(fileRestorer);
+            this.chunkManager.deleteChunksForRestore(fileId);
+        }
     }
 
 
     @Override
-    public void initiateDelete(String filePath) {
-        String fileId = this.fileManager.getHashForFile(filePath);
+    public void initiateDelete(String filepath) {
+        String fileId = this.fileManager.getHashForFile(filepath);
         if(fileId == null) {
             System.err.println("Unknown filepath given");
             return;
@@ -160,7 +268,7 @@ public class Protocol1 extends Protocol {
 
         this.chunkManager.deleteDesiredReplication(fileId);
         this.fileManager.deleteMaxChunkNo(fileId);
-        this.fileManager.deleteHashForFile(filePath);
+        this.fileManager.deleteHashForFile(filepath);
     }
 
 
@@ -212,6 +320,7 @@ public class Protocol1 extends Protocol {
                 e.printStackTrace();
             }
 
+            // TODO: é preciso fazer? faz sentido? como fazer?
             if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) == 0) {
                 if(!deletedFiles.contains(fileId)) {
                     deletedFiles.add(fileId);

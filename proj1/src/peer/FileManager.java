@@ -186,7 +186,7 @@ public class FileManager {
      * @return A string with the chunk's content
      */
     public byte[] getChunk(String fileId, int chunkNo) throws IOException {
-        if(this.isChunkStored(fileId, chunkNo)) {
+        if(!this.isChunkStored(fileId, chunkNo)) {
             return new byte[0];
         }
 
@@ -279,7 +279,6 @@ public class FileManager {
         return this.highestChunks.getOrDefault(fileId, -1);
     }
 
-
     /**
      *
      * @param fileId
@@ -351,6 +350,48 @@ public class FileManager {
 
         saveToDirectory();
     }
+
+
+    /**
+     * Function that creates a restored file with the contents of the file
+     * restorer passed as argument
+     * @param fileRestorer File restorer with the information/chunks of the file to be restored
+     */
+    public void restoreFileFromChunks(FileRestorer fileRestorer) {
+        String filepath = this.getDirectoryPath("files") + "/" + fileRestorer.getFilename();
+
+        FileOutputStream stream;
+        try {
+            stream = new FileOutputStream(filepath);
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found");
+            e.printStackTrace();
+            return;
+        }
+
+        for(int i = 0; i < fileRestorer.getMaxNumChunks(); i++) {
+            byte[] chunkContent = fileRestorer.getChunkForNumber(i);
+            if (chunkContent == null) {
+                System.err.println("Error in file restore: chunk " + i + " not found");
+                return;
+            }
+
+            try {
+                stream.write(chunkContent);
+            } catch (IOException e) {
+                System.err.println("Error in file write when restoring");
+                e.printStackTrace();
+                return;
+            }
+        }
+
+        try {
+            stream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * Adds information that a chunk of a file was stored

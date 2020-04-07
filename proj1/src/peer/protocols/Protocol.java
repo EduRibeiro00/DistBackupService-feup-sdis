@@ -59,6 +59,7 @@ public abstract class Protocol {
     public abstract void deleteIfOutdated(String filepath, String modificationDate);
 
     // Restore
+    public abstract void initiateRestore(String filepath);
     public abstract void sendChunk(Message message);
     public abstract void receiveChunk(Message message);
 
