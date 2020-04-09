@@ -70,21 +70,21 @@ public class Protocol1 extends Protocol {
         Message msg;
         msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
 
-        sendPutChunkMsgLoop(msg, 0, ipAddressMDB, portMDB, fileId, chunkNo, replicationDeg);
+        sendPutChunkMsgLoop(msg, 0, fileId, chunkNo, replicationDeg);
     }
 
-    private void sendPutChunkMsgLoop(Message msg, int iteration, String ipAddress, int port, String fileId, int chunkNo, int replicationDeg) {
+    private void sendPutChunkMsgLoop(Message msg, int iteration, String fileId, int chunkNo, int replicationDeg) {
         if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) < replicationDeg) {
             try {
-                msg.send(ipAddress, port);
+                msg.send(this.ipAddressMDB, this.portMDB);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             if (iteration < 5)
-                executor.schedule(() -> sendPutChunkMsgLoop(msg, iteration + 1, ipAddress, port, fileId, chunkNo, replicationDeg),
-                        (long) (Math.pow(2, iteration)),
-                        TimeUnit.SECONDS);
+                executor.schedule(() -> sendPutChunkMsgLoop(msg, iteration + 1, fileId, chunkNo, replicationDeg),
+                        (long) (1000 * Math.pow(2, iteration)),
+                        TimeUnit.MILLISECONDS);
         }
     }
 
@@ -270,20 +270,21 @@ public class Protocol1 extends Protocol {
 
         Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
 
-        sendDeleteMsgLoop(msg, 0, ipAddressMC, portMC, filepath, fileId);
+        sendDeleteMsgLoop(msg, 0, filepath, fileId);
     }
 
-    private void sendDeleteMsgLoop(Message msg, int iteration, String ipAddress, int port, String filepath, String fileId) {
+    private void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
         try {
-            msg.send(ipAddress, port);
+            msg.send(this.ipAddressMC, this.portMC);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if (iteration < 5)
-            executor.schedule(() -> sendDeleteMsgLoop(msg, iteration + 1, ipAddress, port, filepath, fileId),
-                    (long) (this.TIMEOUT >> 1),
+        if (iteration < 4) {
+            executor.schedule(() -> sendDeleteMsgLoop(msg, iteration + 1, filepath, fileId),
+                    this.TIMEOUT >> 1,
                     TimeUnit.MILLISECONDS);
+        }
         else {
             for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
                 try {

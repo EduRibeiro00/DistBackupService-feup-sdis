@@ -30,11 +30,12 @@ public class ReceiverThread implements Runnable {
     @Override
     public void run() {
         System.out.println("Thread ready for receiving packets");
-        byte[] buf = new byte[this.bufSize];
-        DatagramPacket packet = new DatagramPacket(buf, this.bufSize);
 
         // will read forever until peer is closed
         while (true) {
+            byte[] buf = new byte[this.bufSize];
+            DatagramPacket packet = new DatagramPacket(buf, this.bufSize);
+
             try {
                 this.mCastSkt.receive(packet);
 
