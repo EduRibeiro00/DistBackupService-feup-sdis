@@ -3,6 +3,9 @@ package peer.messages;
 import peer.messages.Message;
 import peer.protocols.Protocol;
 
+import java.net.DatagramPacket;
+import java.util.Arrays;
+
 
 public class MessageHandler {
     private Protocol protocol;
@@ -11,7 +14,10 @@ public class MessageHandler {
         this.protocol = protocol;
     }
 
-    public void process(byte[] data) {
+    public void process(DatagramPacket packet) {
+
+        byte[] data = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
+
         Message message;
         try {
             message = new Message(data);
@@ -23,6 +29,9 @@ public class MessageHandler {
         if(message.getHeader().getSenderId() == this.protocol.getPeerID()) {
             return;
         }
+
+        message.setIpAddress(packet.getAddress());
+        message.setPort(packet.getPort());
 
         System.out.println("Received message: " + message.getHeader());
 

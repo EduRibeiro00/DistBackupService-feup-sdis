@@ -17,7 +17,8 @@ public class Message {
     private final String lastCRLF = "\r\n\r\n";   /** Double CRLF */
     private Header header;                        /** Header of the message */
     private byte[] body = new byte[0];            /** Body of the message */
-
+    private InetAddress ipAddress;
+    private int port;
 
     /**
      * Constructor for message receiving
@@ -137,5 +138,37 @@ public class Message {
      */
     public byte[] getBody() {
         return body;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public InetAddress getIpAddress() {
+        return ipAddress;
+    }
+
+    /**
+     *
+     * @param ipAddress
+     */
+    public void setIpAddress(InetAddress ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int getPort() {
+        return port;
+    }
+
+    /**
+     *
+     * @param port
+     */
+    public void setPort(int port) {
+        this.port = port;
     }
 }

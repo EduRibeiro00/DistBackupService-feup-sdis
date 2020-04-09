@@ -91,20 +91,9 @@ public class FileManager {
      * @return an integer symbolizing the maximum available storage space in KB
      */
     public int getMaximumStorageSpace() {
-        return maximumStorageSpace;
-    }
-
-    /**
-     * Sets the maximum storage space
-     * @param maximumStorageSpace The maximum storage space to be set
-     */
-    public void setMaximumStorageSpace(int maximumStorageSpace) {
-        // save used storage space
-        int usedStorageSpace = this.maximumStorageSpace - this.availableStorageSpace;
-
-        // update maximum and available storage spaces
-        this.maximumStorageSpace = maximumStorageSpace;
-        this.availableStorageSpace = this.maximumStorageSpace - usedStorageSpace;
+        synchronized (this) {
+            return maximumStorageSpace;
+        }
     }
 
     /**
@@ -112,8 +101,25 @@ public class FileManager {
      * @return an integer symbolizing the available storage space in KB
      */
     public int getAvailableStorageSpace() {
-		return this.availableStorageSpace;
-	}
+        synchronized (this) {
+            return this.availableStorageSpace;
+        }
+    }
+
+    /**
+     * Sets the maximum storage space
+     * @param maximumStorageSpace The maximum storage space to be set
+     */
+    public void setMaximumStorageSpace(int maximumStorageSpace) {
+        synchronized (this) {
+            // save used storage space
+            int usedStorageSpace = this.maximumStorageSpace - this.availableStorageSpace;
+
+            // update maximum and available storage spaces
+            this.maximumStorageSpace = maximumStorageSpace;
+            this.availableStorageSpace = this.maximumStorageSpace - usedStorageSpace;
+        }
+    }
 
     /**
      * Returns information of the backed up files
@@ -155,34 +161,35 @@ public class FileManager {
      * @return true if successful, false if otherwise
      */
     public boolean storeChunk(String fileId, int chunkNo, byte[] chunkContent) throws IOException {
-        if(this.isChunkStored(fileId, chunkNo)) {
-            return true;
-        }
+       synchronized (this) {
+           if (this.isChunkStored(fileId, chunkNo)) {
+               return true;
+           }
+           int chunkSize = chunkContent.length / 1000;
 
-        int chunkSize = chunkContent.length / 1000;
+           // log storage
+           if (this.availableStorageSpace < chunkSize) {
+               return false;
+           }
 
-        // log storage
-        if (this.availableStorageSpace < chunkSize) {
-            return false;
-        }
+           this.availableStorageSpace -= chunkSize;
+           this.addChunkStored(fileId, chunkNo);
+           this.chunkSizes.put(fileId + "_" + chunkNo, chunkSize);
+       }
 
-        String chunkPath = getChunkPath(fileId, chunkNo);
-        File chunk = new File(chunkPath);
-        chunk.createNewFile();
-        AsynchronousFileChannel fileChannel =
-                AsynchronousFileChannel.open(Paths.get(chunkPath), StandardOpenOption.WRITE);
+       String chunkPath = getChunkPath(fileId, chunkNo);
+       File chunk = new File(chunkPath);
+       chunk.createNewFile();
+       AsynchronousFileChannel fileChannel =
+               AsynchronousFileChannel.open(Paths.get(chunkPath), StandardOpenOption.WRITE);
 
-        ByteBuffer buffer = ByteBuffer.allocate(chunkContent.length);
-        buffer.put(chunkContent);
-        buffer.flip();
-        fileChannel.write(buffer, 0);
-        buffer.clear();
+       ByteBuffer buffer = ByteBuffer.allocate(chunkContent.length);
+       buffer.put(chunkContent);
+       buffer.flip();
+       fileChannel.write(buffer, 0);
+       buffer.clear();
 
-        this.availableStorageSpace -= chunkSize;
-        this.addChunkStored(fileId, chunkNo);
-        this.chunkSizes.put(fileId + "_" + chunkNo, chunkSize);
-
-        return true;
+       return true;
     }
 
     /**
@@ -334,7 +341,9 @@ public class FileManager {
             this.fileToChunks.remove(fileId);
         }
 
-        this.availableStorageSpace += this.chunkSizes.get(fileId + "_" + chunkNo);
+        synchronized (this) {
+            this.availableStorageSpace += this.chunkSizes.get(fileId + "_" + chunkNo);
+        }
 
         this.chunkSizes.remove(fileId + "_" + chunkNo);
 

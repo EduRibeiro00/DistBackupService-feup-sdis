@@ -50,9 +50,8 @@ public class ReceiverThread implements Runnable {
      * @param packet
      */
     private void handleMessage(DatagramPacket packet) {
-        byte[] data = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
 
-        Runnable processMessage = () -> this.messageHandler.process(data);
+        Runnable processMessage = () -> this.messageHandler.process(packet);
 
         this.service.execute(processMessage);
     }

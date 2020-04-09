@@ -19,13 +19,13 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 public class Protocol1 extends Protocol {
+    protected int numberOfThreads = 20;
+    protected ScheduledThreadPoolExecutor executor;
 
-    private int numberOfThreads = 20;
-    private ScheduledThreadPoolExecutor executor;
+    public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) {
+        super(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
 
-    public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) throws IOException {
-        super(peerID, "1.0", ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
-
+        this.setVersion("1.0");
         executor = new ScheduledThreadPoolExecutor(numberOfThreads);
     }
 
@@ -154,20 +154,26 @@ public class Protocol1 extends Protocol {
         this.chunkManager.createFileRestorer(filename, fileId, maxNumChunks);
 
         // send a GETCHUNK for each chunk of the file
-        for (int i = 0; i <= maxNumChunks; i++) {
+        sendGetchunkMsgLoop(fileId, 0, maxNumChunks);
+    }
 
+
+    protected void sendGetchunkMsgLoop(String fileId, int chunkNo, int maxNumChunks) {
+        if (chunkNo <= maxNumChunks) {
             try {
-                new Message(this.protocolVersion, MessageType.GETCHUNK, this.peerID, fileId, i).send(
+                new Message(this.protocolVersion, MessageType.GETCHUNK, this.peerID, fileId, chunkNo).send(
                         this.ipAddressMC, this.portMC
                 );
-            }
-            catch (IOException e) {
-                System.err.println("Error sending message");
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
 
+            executor.schedule(() -> sendGetchunkMsgLoop(fileId, chunkNo + 1, maxNumChunks),
+                    new Random().nextInt(401),
+                    TimeUnit.MILLISECONDS);
+        }
     }
+
 
     @Override
     public void sendChunk(Message message) {
@@ -336,27 +342,15 @@ public class Protocol1 extends Protocol {
 
             try {
                 this.fileManager.removeChunk(fileId, chunkNo);
+                new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo).send(
+                        this.ipAddressMC,
+                        this.portMC
+                );
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            Message msg = new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo);
-
-            sendRemovedMsgLoop(msg, 0, ipAddressMC, portMC);
         }
-    }
-
-    private void sendRemovedMsgLoop(Message msg, int iteration, String ipAddress, int port) {
-        try {
-            msg.send(ipAddress, port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (iteration < 5)
-            executor.schedule(() -> sendRemovedMsgLoop(msg, iteration + 1, ipAddress, port),
-                    new Random().nextInt(401),
-                    TimeUnit.MILLISECONDS);
     }
 
 
