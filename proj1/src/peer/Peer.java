@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
@@ -23,7 +25,7 @@ public class Peer implements RemoteInterface {
 
 
     private Protocol protocol;  // protocol responsible for the peer behaviours
-
+    private ExecutorService service; // ExecutorService responsible for threads
 
     /**
      * Constructor of the peer
@@ -58,6 +60,8 @@ public class Peer implements RemoteInterface {
         new Thread(backupThread).start();
         new Thread(restoreThread).start();
 
+        this.service = Executors.newFixedThreadPool(N_THREADS_PER_CHANNEL);
+
         System.out.println("Started all threads...");
     }
 
@@ -70,60 +74,62 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public void backup(String filepath, int replicationDegree) {
-        if (filepath == null || replicationDegree < 1 || replicationDegree > 9) {
-            throw new IllegalArgumentException("Invalid arguments for backup!");
-        }
-
-        File file = new File(filepath);
-        if(!file.exists()){
-            System.err.println("File not found");
-            return;
-        }
-
-        byte[] totalFileContent;
-        try {
-            totalFileContent = Files.readAllBytes(file.toPath());
-        } catch (IOException e) {
-            System.err.println("Error while trying to read from file");
-            return;
-        }
-
-
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-        String modificationDate = sdf.format(file.lastModified());
-
-        this.protocol.deleteIfOutdated(filepath, modificationDate);
-
-        int chunkNo = 0;
-        int minReplication = -1;
-
-        int currentIndex = 0, lastIndex = CHUNK_SIZE;
-        
-        for (; currentIndex < totalFileContent.length; lastIndex += CHUNK_SIZE) {
-            if(lastIndex > totalFileContent.length) {
-                lastIndex = totalFileContent.length;
+        this.service.execute(() -> {
+            if (filepath == null || replicationDegree < 1 || replicationDegree > 9) {
+                throw new IllegalArgumentException("Invalid arguments for backup!");
             }
 
-            byte[] chunkContent = Arrays.copyOfRange(totalFileContent, currentIndex, lastIndex);
-            int replication = this.protocol.initiateBackup(filepath,
-                    modificationDate,
-                    chunkNo,
-                    chunkContent,
-                    replicationDegree);
-
-            if (minReplication == -1 || minReplication > replication) {
-                minReplication = replication;
+            File file = new File(filepath);
+            if (!file.exists()) {
+                System.err.println("File not found");
+                return;
             }
 
-            chunkNo++;
-            currentIndex = lastIndex;
-        }
+            byte[] totalFileContent;
+            try {
+                totalFileContent = Files.readAllBytes(file.toPath());
+            } catch (IOException e) {
+                System.err.println("Error while trying to read from file");
+                return;
+            }
 
-        if(totalFileContent.length % CHUNK_SIZE == 0) {
-            this.protocol.initiateBackup(filepath, modificationDate, chunkNo, new byte[0], replicationDegree);
-        }
 
-        System.out.println("Replication degree achieved: " + (minReplication == -1 ? 0 : minReplication));
+            SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+            String modificationDate = sdf.format(file.lastModified());
+
+            this.protocol.deleteIfOutdated(filepath, modificationDate);
+
+            int chunkNo = 0;
+            int minReplication = -1;
+
+            int currentIndex = 0, lastIndex = CHUNK_SIZE;
+
+            for (; currentIndex < totalFileContent.length; lastIndex += CHUNK_SIZE) {
+                if (lastIndex > totalFileContent.length) {
+                    lastIndex = totalFileContent.length;
+                }
+
+                byte[] chunkContent = Arrays.copyOfRange(totalFileContent, currentIndex, lastIndex);
+                int replication = this.protocol.initiateBackup(filepath,
+                        modificationDate,
+                        chunkNo,
+                        chunkContent,
+                        replicationDegree);
+
+                if (minReplication == -1 || minReplication > replication) {
+                    minReplication = replication;
+                }
+
+                chunkNo++;
+                currentIndex = lastIndex;
+            }
+
+            if (totalFileContent.length % CHUNK_SIZE == 0) {
+                this.protocol.initiateBackup(filepath, modificationDate, chunkNo, new byte[0], replicationDegree);
+            }
+
+            System.out.println("Replication degree achieved: " + (minReplication == -1 ? 0 : minReplication));
+        });
     }
 
     /**
@@ -133,7 +139,7 @@ public class Peer implements RemoteInterface {
      */
     @Override
     public void delete(String fileId) {
-        this.protocol.initiateDelete(fileId);
+        this.service.execute(() -> this.protocol.initiateDelete(fileId));
     }
 
 

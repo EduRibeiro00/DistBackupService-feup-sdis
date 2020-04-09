@@ -77,6 +77,7 @@ public class Protocol1 extends Protocol {
             }
 
             try {
+                // TODO: tirar o sleep? (talvez lancar nova thread)
                 Thread.sleep((long) (this.TIMEOUT * Math.pow(2, i)));
             } catch (InterruptedException ignored) { }
 
@@ -100,6 +101,7 @@ public class Protocol1 extends Protocol {
 
             this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
 
+            // TODO: tirar o sleep? (talvez lancar nova thread)
             Thread.sleep(new Random().nextInt(401));
 
             new Message(this.protocolVersion,
@@ -253,6 +255,7 @@ public class Protocol1 extends Protocol {
         for (int i = 0; i < 5; i++) {
             try {
                 msg.send(this.ipAddressMDB, this.portMDB);
+                // TODO: tirar o sleep? (talvez lancar nova thread)
                 Thread.sleep(this.TIMEOUT >> 1);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
@@ -324,6 +327,7 @@ public class Protocol1 extends Protocol {
 
             for (int i = 0; i < 5; i++) {
                 try {
+                    // TODO: tirar o sleep? (talvez lancar nova thread)
                     Thread.sleep( new Random().nextInt(401));
                     msg.send(this.ipAddressMC, this.portMC);
                 } catch (IOException | InterruptedException e) {
