@@ -35,7 +35,7 @@ public class Header {
      */
     public Header(ArrayList<String> header) throws IllegalArgumentException {
         // No point in processing the rest if we don't know any message with header size < 4
-        if(header.size() < 4 || header.size() > 6) {
+        if(header.size() < 4) {
             throw new IllegalArgumentException("Invalid message header received");
         }
 

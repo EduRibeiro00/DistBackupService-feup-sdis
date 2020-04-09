@@ -23,12 +23,13 @@ import java.util.concurrent.TimeUnit;
 
 public class Protocol1 extends Protocol {
 
-    private int numberOfThreads = 10;
-    private ScheduledThreadPoolExecutor executor;
+    protected int numberOfThreads = 10;
+    protected ScheduledThreadPoolExecutor executor;
 
-    public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) throws IOException {
-        super(peerID, "1.0", ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
+    public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) {
+        super(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
 
+        this.setVersion("1.0");
         executor = new ScheduledThreadPoolExecutor(numberOfThreads);
     }
 
@@ -169,7 +170,6 @@ public class Protocol1 extends Protocol {
                 e.printStackTrace();
             }
         }
-
     }
 
     @Override

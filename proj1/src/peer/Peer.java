@@ -4,6 +4,7 @@ import link.RemoteInterface;
 import peer.messages.MessageHandler;
 import peer.protocols.Protocol;
 import peer.protocols.Protocol1;
+import peer.protocols.Protocol2;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -43,6 +44,9 @@ public class Peer implements RemoteInterface {
         switch (protocolVersion) {
             case "1.0":
                 this.protocol = new Protocol1(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
+                break;
+            case "1.1":
+                this.protocol = new Protocol2(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
                 break;
             default:
                 throw new Exception(String.format("Version %s not available", protocolVersion));

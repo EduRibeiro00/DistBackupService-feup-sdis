@@ -23,7 +23,7 @@ public abstract class Protocol {
     protected int portMDR;
 
     //Constructor
-    public Protocol(int peerID, String protocolVersion, 
+    public Protocol(int peerID,
                     String ipAddressMC, int portMC, 
                     String ipAddressMDB, int portMDB, 
                     String ipAddressMDR, int portMDR) {
@@ -38,13 +38,16 @@ public abstract class Protocol {
         this.peerID = peerID;
         this.chunkManager = new ChunkManager(this.peerID);
         this.fileManager = new FileManager(this.peerID);
-        this.protocolVersion = protocolVersion;
+        this.protocolVersion = "";
     }
+
 
     //Version handling
     public String getVersion() {
         return this.protocolVersion;
     }
+    protected void setVersion(String version) { this.protocolVersion = version; }
+
 
     //Peer Id
     public int getPeerID() {
