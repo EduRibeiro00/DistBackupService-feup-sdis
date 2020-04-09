@@ -2,6 +2,9 @@ package peer;
 
 import peer.messages.Header;
 
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.StandardOpenOption;
 import java.security.NoSuchAlgorithmException;
 import java.io.*;
 import java.util.Map;
@@ -10,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.charset.*;
+import java.util.concurrent.Future;
 
 /**
  * Class that manages the storage and lookup of local files
@@ -163,37 +166,38 @@ public class FileManager {
             return false;
         }
 
-        this.addChunkStored(fileId, chunkNo);
-
         String chunkPath = getChunkPath(fileId, chunkNo);
         File chunk = new File(chunkPath);
         chunk.createNewFile();
-        OutputStream chunkWriter = new FileOutputStream(chunk);
-        chunkWriter.write(chunkContent);
-        chunkWriter.close();
+        AsynchronousFileChannel fileChannel =
+                AsynchronousFileChannel.open(Paths.get(chunkPath), StandardOpenOption.WRITE);
+
+        ByteBuffer buffer = ByteBuffer.allocate(chunkContent.length);
+        buffer.put(chunkContent);
+        buffer.flip();
+        fileChannel.write(buffer, 0);
+        buffer.clear();
 
         this.availableStorageSpace -= chunkSize;
-
+        this.addChunkStored(fileId, chunkNo);
         this.chunkSizes.put(fileId + "_" + chunkNo, chunkSize);
 
-        return true;    //TODO: add error checking
+        return true;
     }
 
     /**
      * Returns the content of a file's chunk
+     * @param buf Byte buffer that will have the chunk content
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @return A string with the chunk's content
      */
-    public byte[] getChunk(String fileId, int chunkNo) throws IOException {
-        if(!this.isChunkStored(fileId, chunkNo)) {
-            return new byte[0];
-        }
-
+    public Future<Integer> getChunk(ByteBuffer buf, String fileId, int chunkNo) throws IOException {
         String chunkPath = getChunkPath(fileId, chunkNo);
-        File chunkFile = new File(chunkPath);
+        AsynchronousFileChannel fileChannel =
+                AsynchronousFileChannel.open(Paths.get(chunkPath), StandardOpenOption.READ);
 
-        return Files.readAllBytes(chunkFile.toPath());
+        return fileChannel.read(buf, 0);
     }
 
 

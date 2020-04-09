@@ -4,12 +4,10 @@ import peer.ChunkManager;
 import peer.FileManager;
 import peer.messages.Message;
 
-import java.net.*;
-import java.io.IOException;
-
 
 public abstract class Protocol {
     protected final int TIMEOUT = 1000;
+    protected final int CHUNK_SIZE = 64000;
     protected int peerID;                 // peer identifier
     protected ChunkManager chunkManager;     // chunk manager
     protected FileManager fileManager;       // current available disk space

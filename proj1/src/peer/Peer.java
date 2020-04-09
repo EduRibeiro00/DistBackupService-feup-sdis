@@ -6,10 +6,13 @@ import peer.protocols.Protocol;
 import peer.protocols.Protocol1;
 
 import java.io.*;
-import java.nio.file.Files;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -85,43 +88,54 @@ public class Peer implements RemoteInterface {
                 return;
             }
 
-            byte[] totalFileContent;
+            AsynchronousFileChannel fileChannel;
+
             try {
-                totalFileContent = Files.readAllBytes(file.toPath());
+                fileChannel = AsynchronousFileChannel.open(Paths.get(filepath), StandardOpenOption.READ);
             } catch (IOException e) {
                 System.err.println("Error while trying to read from file");
                 return;
             }
-
 
             SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
             String modificationDate = sdf.format(file.lastModified());
 
             this.protocol.deleteIfOutdated(filepath, modificationDate);
 
-            int chunkNo = 0;
-            int minReplication = -1;
+            int fileSize = (int) file.length();
+            int numChunks = fileSize / CHUNK_SIZE;
+            if (fileSize % CHUNK_SIZE != 0)
+                numChunks++;
 
-            int currentIndex = 0, lastIndex = CHUNK_SIZE;
+            for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
+                ByteBuffer buf = ByteBuffer.allocate(CHUNK_SIZE);
+                long position = chunkNo * CHUNK_SIZE;
+                final int chunkNoFinal = chunkNo;
 
-            for (; currentIndex < totalFileContent.length; lastIndex += CHUNK_SIZE) {
-                if (lastIndex > totalFileContent.length) {
-                    lastIndex = totalFileContent.length;
-                }
+                fileChannel.read(buf, position, buf, new CompletionHandler<Integer, ByteBuffer>() {
+                    @Override
+                    public void completed(Integer result, ByteBuffer attachment) {
+                        attachment.flip();
+                        byte[] data = new byte[attachment.limit()];
+                        attachment.get(data);
+                        protocol.initiateBackup(filepath,
+                                modificationDate,
+                                chunkNoFinal,
+                                data,
+                                replicationDegree);
 
-                byte[] chunkContent = Arrays.copyOfRange(totalFileContent, currentIndex, lastIndex);
-                this.protocol.initiateBackup(filepath,
-                        modificationDate,
-                        chunkNo,
-                        chunkContent,
-                        replicationDegree);
+                        attachment.clear();
+                    }
 
-                chunkNo++;
-                currentIndex = lastIndex;
+                    @Override
+                    public void failed(Throwable exc, ByteBuffer attachment) {
+
+                    }
+                });
             }
 
-            if (totalFileContent.length % CHUNK_SIZE == 0) {
-                this.protocol.initiateBackup(filepath, modificationDate, chunkNo, new byte[0], replicationDegree);
+            if (fileSize % CHUNK_SIZE == 0) {
+                this.protocol.initiateBackup(filepath, modificationDate, numChunks, new byte[0], replicationDegree);
             }
         });
     }

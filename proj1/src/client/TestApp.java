@@ -10,6 +10,7 @@ import java.rmi.registry.Registry;
 // java client.TestApp 1234 STATE
 // java client.TestApp 1234 BACKUP peer/files/ola.txt 1
 // java client.TestApp 1234 DELETE peer/files/ola.txt
+// java client.TestApp 1234 RESTORE peer/files/ola.txt
 // java client.TestApp 5678 RECLAIM 0
 // java peer.PeerLauncher 1.0 1234 1234 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
 // java peer.PeerLauncher 1.0 5678 5678 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082

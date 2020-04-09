@@ -10,20 +10,17 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Time;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class Protocol1 extends Protocol {
 
-    private int numberOfThreads = 10;
+    private int numberOfThreads = 20;
     private ScheduledThreadPoolExecutor executor;
 
     public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) throws IOException {
@@ -180,10 +177,11 @@ public class Protocol1 extends Protocol {
 
         // if the peer has that chunk saved
         if (this.fileManager.isChunkStored(fileId, chunkNo)) {
-            byte[] chunkContent = null;
+            ByteBuffer byteBuffer = ByteBuffer.allocate(CHUNK_SIZE);
+            Future<Integer> future;
             MulticastSocket mCastSkt;
             try {
-                chunkContent = this.fileManager.getChunk(fileId, chunkNo);
+                future = this.fileManager.getChunk(byteBuffer, fileId, chunkNo);
 
                 mCastSkt = new MulticastSocket(this.portMDR);
                 mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDR));
@@ -221,10 +219,15 @@ public class Protocol1 extends Protocol {
 
             // send message with chunk
             try {
+                future.get();
+                byteBuffer.flip();
+                byte[] chunkContent = new byte[byteBuffer.limit()];
+                byteBuffer.get(chunkContent);
                 new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkContent).send(
                         this.ipAddressMDR, this.portMDR
                 );
-            } catch (IOException e) {
+                byteBuffer.clear();
+            } catch (IOException | InterruptedException | ExecutionException e) {
                 System.err.println("Error sending chunk message");
                 e.printStackTrace();
             }
@@ -245,7 +248,7 @@ public class Protocol1 extends Protocol {
         // If all the file's chunks were saved
         if (fileRestorer != null) {
             // creates and restores the file
-            this.fileManager.restoreFileFromChunks(fileRestorer);
+            executor.execute(() -> this.fileManager.restoreFileFromChunks(fileRestorer));
             this.chunkManager.deleteChunksForRestore(fileId);
         }
     }
@@ -313,7 +316,6 @@ public class Protocol1 extends Protocol {
 
     @Override
     public void reclaim(int newMaximumStorageCapacity) {
-        ArrayList<String> deletedFiles = new ArrayList<>();
         this.fileManager.setMaximumStorageSpace(newMaximumStorageCapacity);
 
         if(this.fileManager.getAvailableStorageSpace() >= 0)
@@ -372,11 +374,11 @@ public class Protocol1 extends Protocol {
             return;
         }
 
-
-        byte[] chunkContent;
+        ByteBuffer byteBuffer = ByteBuffer.allocate(CHUNK_SIZE);
+        Future<Integer> future;
         MulticastSocket mCastSkt;
         try {
-            chunkContent = this.fileManager.getChunk(fileId, chunkNo);
+            future = this.fileManager.getChunk(byteBuffer, fileId, chunkNo);
 
             mCastSkt = new MulticastSocket(this.portMDB);
             mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDB));
@@ -414,7 +416,16 @@ public class Protocol1 extends Protocol {
             e.printStackTrace(); // TODO: change this
         }
 
-        this.backupChunk(fileId, chunkNo, chunkContent, desiredReplication);
+        try {
+            future.get();
+            byteBuffer.flip();
+            byte[] chunkContent = new byte[byteBuffer.limit()];
+            byteBuffer.get(chunkContent);
+            this.backupChunk(fileId, chunkNo, chunkContent, desiredReplication);
+        }
+        catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
 
