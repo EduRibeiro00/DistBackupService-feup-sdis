@@ -110,15 +110,11 @@ public class Peer implements RemoteInterface {
                 }
 
                 byte[] chunkContent = Arrays.copyOfRange(totalFileContent, currentIndex, lastIndex);
-                int replication = this.protocol.initiateBackup(filepath,
+                this.protocol.initiateBackup(filepath,
                         modificationDate,
                         chunkNo,
                         chunkContent,
                         replicationDegree);
-
-                if (minReplication == -1 || minReplication > replication) {
-                    minReplication = replication;
-                }
 
                 chunkNo++;
                 currentIndex = lastIndex;
@@ -127,8 +123,6 @@ public class Peer implements RemoteInterface {
             if (totalFileContent.length % CHUNK_SIZE == 0) {
                 this.protocol.initiateBackup(filepath, modificationDate, chunkNo, new byte[0], replicationDegree);
             }
-
-            System.out.println("Replication degree achieved: " + (minReplication == -1 ? 0 : minReplication));
         });
     }
 

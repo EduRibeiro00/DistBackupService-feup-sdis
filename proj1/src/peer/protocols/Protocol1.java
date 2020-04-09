@@ -12,21 +12,29 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class Protocol1 extends Protocol {
 
+    private int numberOfThreads = 10;
+    private ScheduledThreadPoolExecutor executor;
+
     public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) throws IOException {
         super(peerID, "1.0", ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
+
+        executor = new ScheduledThreadPoolExecutor(numberOfThreads);
     }
 
 
     @Override
-    public int initiateBackup(String filePath, String modificationDate, int chunkNo, byte[] fileContent, int replicationDeg) {
+    public void initiateBackup(String filePath, String modificationDate, int chunkNo, byte[] fileContent, int replicationDeg) {
         String encodedFileId = null;
         try {
             encodedFileId = this.fileManager.insertHashForFile(filePath, modificationDate);
@@ -35,8 +43,6 @@ public class Protocol1 extends Protocol {
         }
 
         this.backupChunk(encodedFileId, chunkNo, fileContent, replicationDeg);
-
-        return this.chunkManager.getPerceivedReplication(encodedFileId, chunkNo);
     }
 
 
@@ -67,22 +73,21 @@ public class Protocol1 extends Protocol {
         Message msg;
         msg = new Message(this.protocolVersion, MessageType.PUTCHUNK, this.peerID, fileId, chunkNo, replicationDeg, fileContent);
 
-        for (int i = 0;
-             i < 5 && this.chunkManager.getPerceivedReplication(fileId, chunkNo) < replicationDeg;
-             i++) {
+        sendPutChunkMsgLoop(msg, 0, ipAddressMDB, portMDB, fileId, chunkNo, replicationDeg);
+    }
+
+    private void sendPutChunkMsgLoop(Message msg, int iteration, String ipAddress, int port, String fileId, int chunkNo, int replicationDeg) {
+        if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) < replicationDeg) {
             try {
-                msg.send(this.ipAddressMDB, this.portMDB);
+                msg.send(ipAddress, port);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            try {
-                // TODO: tirar o sleep? (talvez lancar nova thread)
-                Thread.sleep((long) (this.TIMEOUT * Math.pow(2, i)));
-            } catch (InterruptedException ignored) { }
-
-            System.out.println("Ending cycle, have replication degree of " + this.chunkManager.getPerceivedReplication(
-                    fileId, chunkNo));
+            if (iteration < 5)
+                executor.schedule(() -> sendPutChunkMsgLoop(msg, iteration + 1, ipAddress, port, fileId, chunkNo, replicationDeg),
+                        (long) (Math.pow(2, iteration)),
+                        TimeUnit.SECONDS);
         }
     }
 
@@ -101,16 +106,20 @@ public class Protocol1 extends Protocol {
 
             this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
 
-            // TODO: tirar o sleep? (talvez lancar nova thread)
-            Thread.sleep(new Random().nextInt(401));
+            executor.schedule(() -> {
+                try {
+                    new Message(this.protocolVersion,
+                            MessageType.STORED,
+                            this.peerID,
+                            header.getFileId(),
+                            header.getChunkNo()
+                    ).send(this.ipAddressMC, this.portMC);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, new Random().nextInt(401), TimeUnit.MILLISECONDS);
 
-            new Message(this.protocolVersion,
-                    MessageType.STORED,
-                    this.peerID,
-                    header.getFileId(),
-                    header.getChunkNo()
-            ).send(this.ipAddressMC, this.portMC);
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -252,26 +261,32 @@ public class Protocol1 extends Protocol {
 
         Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
 
-        for (int i = 0; i < 5; i++) {
-            try {
-                msg.send(this.ipAddressMDB, this.portMDB);
-                // TODO: tirar o sleep? (talvez lancar nova thread)
-                Thread.sleep(this.TIMEOUT >> 1);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+        sendDeleteMsgLoop(msg, 0, ipAddressMC, portMC, filepath, fileId);
+    }
+
+    private void sendDeleteMsgLoop(Message msg, int iteration, String ipAddress, int port, String filepath, String fileId) {
+        try {
+            msg.send(ipAddress, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (iteration < 5)
+            executor.schedule(() -> sendDeleteMsgLoop(msg, iteration + 1, ipAddress, port, filepath, fileId),
+                    (long) (this.TIMEOUT >> 1),
+                    TimeUnit.MILLISECONDS);
+        else {
+            for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
+                try {
+                    this.fileManager.removeChunk(fileId, i);
+                } catch (IOException ignored) {}
+                this.chunkManager.deletePerceivedReplication(fileId, i);
             }
-        }
 
-        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
-            try {
-                this.fileManager.removeChunk(fileId, i);
-            } catch (IOException ignored) {}
-            this.chunkManager.deletePerceivedReplication(fileId, i);
+            this.chunkManager.deleteDesiredReplication(fileId);
+            this.fileManager.deleteMaxChunkNo(fileId);
+            this.fileManager.deleteHashForFile(filepath);
         }
-
-        this.chunkManager.deleteDesiredReplication(fileId);
-        this.fileManager.deleteMaxChunkNo(fileId);
-        this.fileManager.deleteHashForFile(filepath);
     }
 
 
@@ -325,16 +340,21 @@ public class Protocol1 extends Protocol {
 
             Message msg = new Message(this.protocolVersion, MessageType.REMOVED, this.peerID, fileId, chunkNo);
 
-            for (int i = 0; i < 5; i++) {
-                try {
-                    // TODO: tirar o sleep? (talvez lancar nova thread)
-                    Thread.sleep( new Random().nextInt(401));
-                    msg.send(this.ipAddressMC, this.portMC);
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+            sendRemovedMsgLoop(msg, 0, ipAddressMC, portMC);
         }
+    }
+
+    private void sendRemovedMsgLoop(Message msg, int iteration, String ipAddress, int port) {
+        try {
+            msg.send(ipAddress, port);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (iteration < 5)
+            executor.schedule(() -> sendRemovedMsgLoop(msg, iteration + 1, ipAddress, port),
+                    new Random().nextInt(401),
+                    TimeUnit.MILLISECONDS);
     }
 
 

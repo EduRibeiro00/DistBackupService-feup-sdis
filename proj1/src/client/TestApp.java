@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+// find . -name "*.java" -print | xargs javac
 // java client.TestApp 1234 STATE
 // java client.TestApp 1234 BACKUP peer/files/ola.txt 1
 // java client.TestApp 1234 DELETE peer/files/ola.txt
