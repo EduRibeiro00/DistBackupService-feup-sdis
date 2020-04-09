@@ -16,7 +16,7 @@ public class Message {
     private final String crlf = "\r\n";           /** Carriage return and line feed, to  */
     private final String lastCRLF = "\r\n\r\n";   /** Double CRLF */
     private Header header;                        /** Header of the message */
-    private byte[] body = new byte[0];                          /** Body of the message */
+    private byte[] body = new byte[0];            /** Body of the message */
 
 
     /**
