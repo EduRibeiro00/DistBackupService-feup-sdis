@@ -91,6 +91,18 @@ public class Message {
 
 
     /**
+     * Fills the Message class for message sending DELETED messages
+     * @param version the version of the protocol to be used
+     * @param msgType the type of message to be sent
+     * @param senderId the ID of the message sender
+     */
+    public Message(String version, MessageType msgType, int senderId) {
+        this.header = new Header(version, msgType, senderId);
+    }
+
+
+
+    /**
      * Converts the full message to a byte array
      * @return byte array of the converted message
      */

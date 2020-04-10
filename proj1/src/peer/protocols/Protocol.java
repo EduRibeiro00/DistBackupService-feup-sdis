@@ -2,6 +2,7 @@ package peer.protocols;
 
 import peer.ChunkManager;
 import peer.FileManager;
+import peer.messages.Header;
 import peer.messages.Message;
 
 /**
@@ -154,6 +155,12 @@ public abstract class Protocol {
      */
     public abstract void delete(Message message);
 
+    /**
+     * Abstract function to be called when a DELETED message is received (only used in protocol for enhancements).
+     * @param message message received (DELETED)
+     */
+    public abstract void receiveDeleted(Message message);
+
     // --------------------------
     // Reclaim
 
@@ -168,6 +175,15 @@ public abstract class Protocol {
      * @param message message received (REMOVED)
      */
     public abstract void removed(Message message);
+
+    // --------------------------
+    // Header handling
+
+    /**
+     * Abstract function for receiving and parsing a header (only used in protocol for enhancements).
+     * @param header received header
+     */
+    public abstract void receivedHeader(Header header);
 
     // --------------------------
     // State

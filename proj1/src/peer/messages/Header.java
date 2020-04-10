@@ -25,7 +25,9 @@ public class Header {
         "GETCHUNK",
         "CHUNK",
         "DELETE",
-        "REMOVED"
+        "REMOVED",
+        "GREETINGS",
+        "DELETED"
     ); /** Different types of messages */
 
 
@@ -34,24 +36,27 @@ public class Header {
      * @param header a list of elements received from a peer
      */
     public Header(ArrayList<String> header) throws IllegalArgumentException {
-        // No point in processing the rest if we don't know any message with header size < 4
-        if(header.size() < 4) {
+        // No point in processing the rest if we don't know any message with header size < 3
+        if(header.size() < 3) {
             throw new IllegalArgumentException("Invalid message header received");
         }
 
         this.version = header.remove(0);
         this.messageType = MessageType.valueOf(header.remove(0));
         this.senderId = Integer.parseInt(header.remove(0));
-        this.fileId = header.remove(0);
 
         switch (this.messageType) {
+            case GREETINGS:
+                break;
             case STORED: case GETCHUNK: case CHUNK: case REMOVED:
+                this.fileId = header.remove(0);
                 if(header.size() != 1) {
                     throw new IllegalArgumentException("Invalid message header received");
                 }
                 this.chunkNo = Integer.parseInt(header.remove(0));
                 break;
             case PUTCHUNK:
+                this.fileId = header.remove(0);
                 if(header.size() != 2) {
                     throw new IllegalArgumentException("Invalid message header received");
                 }
@@ -59,6 +64,7 @@ public class Header {
                 this.replicationDeg = Integer.parseInt(header.remove(0));
                 break;
             default:
+                this.fileId = header.remove(0);
                 break;
         }
 
@@ -96,7 +102,7 @@ public class Header {
      * @param chunkNo the chunk number of the specified file (may be unsued)
      */
     public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo) throws IllegalArgumentException {
-        if(msgType == MessageType.DELETE || msgType == MessageType.PUTCHUNK) {
+        if(msgType != MessageType.STORED && msgType != MessageType.GETCHUNK && msgType != MessageType.REMOVED && msgType != MessageType.CHUNK) {
             throw new IllegalArgumentException("Invalid message header");
         }
         this.version = version;
@@ -116,7 +122,7 @@ public class Header {
      * @param fileId the file identifier in the backup service, as the result of SHA256
      */
     public Header(String version, MessageType msgType, int senderId, String fileId) throws IllegalArgumentException {
-        if(msgType != MessageType.DELETE) {
+        if(msgType != MessageType.DELETE && msgType != MessageType.DELETED) {
             throw new IllegalArgumentException("Invalid message header");
         }
         this.version = version;
@@ -128,6 +134,24 @@ public class Header {
         this.fileId = fileId;
     }
 
+
+    /**
+     * Fills the Header class for message sending without chunkNo and RepDeg
+     * @param version the version of the protocol to be used
+     * @param msgType the type of message to be sent
+     * @param senderId the ID of the message sender
+     */
+    public Header(String version, MessageType msgType, int senderId) throws IllegalArgumentException {
+        if(msgType != MessageType.GREETINGS) {
+            throw new IllegalArgumentException("Invalid message header");
+        }
+        this.version = version;
+        this.messageType = msgType;
+        this.senderId = senderId;
+        this.chunkNo = -1;
+        this.replicationDeg = -1;
+        this.fileId = "";
+    }
 
     /**
      * Retrieves the version of the message.
@@ -206,6 +230,8 @@ public class Header {
                 header += " " + chunkNo;
                 break;
             case DELETE:
+            case DELETED:
+            case GREETINGS:
                 break;
         }
         header += " \r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed

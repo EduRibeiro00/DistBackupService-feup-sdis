@@ -353,7 +353,7 @@ public class Protocol1 extends Protocol {
      * @param filepath path of the file
      * @param fileId file identifier
      */
-    private void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
+    protected void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
         try {
             msg.send(this.ipAddressMC, this.portMC);
         } catch (IOException e) {
@@ -443,6 +443,9 @@ public class Protocol1 extends Protocol {
     }
 
 
+
+
+
     /**
      * Method to be called when a REMOVED message is received.
      * @param message message received (REMOVED)
@@ -515,6 +518,17 @@ public class Protocol1 extends Protocol {
         }
     }
 
+
+    @Override
+    public void receivedHeader(Header header) {
+
+    }
+
+
+    @Override
+    public void receiveDeleted(Message message) {
+
+    }
 
     /**
      * Method to be called by the a peer when its current state is requested.

@@ -1,5 +1,6 @@
 package peer.protocols;
 
+import peer.FileDeleter;
 import peer.messages.Header;
 import peer.messages.Message;
 import peer.messages.MessageType;
@@ -8,8 +9,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +20,7 @@ public class Protocol2 extends Protocol1 {
     public Protocol2(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) {
         super(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
         this.setVersion("1.1");
+        this.sendGreetings();
     }
 
     @Override
@@ -230,4 +232,82 @@ public class Protocol2 extends Protocol1 {
         }
 
     }
+
+
+    @Override
+    public void initiateDelete(String filepath) {
+        String fileId = this.fileManager.getHashForFile(filepath);
+        if(fileId == null) {
+            System.err.println("Unknown filepath given");
+            return;
+        }
+
+        Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
+
+        ArrayList<Integer> storers = this.chunkManager.getFileStorers(fileId, this.fileManager.getMaxChunkNo(fileId), this.peerID);
+
+        for(Integer storer : storers) {
+            this.chunkManager.addToFileDeleter(storer, msg, this.ipAddressMC, this.portMC);
+        }
+
+        sendDeleteMsgLoop(msg, 0, filepath, fileId);
+    }
+
+
+    @Override
+    public void delete(Message message) {
+        String fileId = message.getHeader().getFileId();
+
+        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
+            this.chunkManager.deletePerceivedReplication(fileId, i);
+
+            try {
+                this.fileManager.removeChunk(fileId, i);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println(this.fileManager.getFileChunks(fileId).size() == 0 ? "Successfully deleted all chunks" : "Failed to delete all chunks");
+
+        this.chunkManager.deleteDesiredReplication(fileId);
+        this.fileManager.removeFile(fileId);
+
+        Message msg = new Message(this.protocolVersion, MessageType.DELETED, this.peerID, fileId);
+
+        executor.schedule(() -> {
+                    try {
+                        msg.send(this.ipAddressMC, this.portMC);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                },
+                new Random().nextInt(401),
+                TimeUnit.MILLISECONDS);
+    }
+
+
+
+    @Override
+    public void receiveDeleted(Message message) {
+        Header header = message.getHeader();
+        this.chunkManager.removeFromFileDeleter(header.getSenderId(), header.getFileId());
+    }
+
+
+    @Override
+    public void receivedHeader(Header header) {
+        this.chunkManager.getFileDeleter(header.getSenderId()).sendMessages();
+    }
+
+
+    public void sendGreetings() {
+        Message msg = new Message(this.protocolVersion, MessageType.GREETINGS, this.peerID);
+        try {
+            msg.send(this.ipAddressMC, this.portMC);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
  }

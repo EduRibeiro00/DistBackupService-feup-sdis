@@ -1,5 +1,7 @@
 package peer;
 
+import peer.messages.Message;
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,6 +10,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 public class ChunkManager {
     private final static String desiredReplicationInfo = "desired_replication_info.data";
     private final static String perceivedReplicationInfo = "perceived_replication_info.data";
+    private final static String fileDeletionInfo = "file_deletion_info.data";
     private final String directory; // Directory assigned to the peer
 
     /**
@@ -31,6 +34,10 @@ public class ChunkManager {
      */
     private ConcurrentHashMap<String, FileRestorer> fileRestoringTable;
 
+    /**
+     *
+     */
+    ConcurrentHashMap<Integer, FileDeleter> fileDeletionList;
 
 
     /**
@@ -205,10 +212,64 @@ public class ChunkManager {
     }
 
     /**
+     *
+     * @return
+     */
+    public ArrayList<Integer> getFileStorers(String fileId, int highestChunkNo, int peerId) {
+        ArrayList<Integer> holders = new ArrayList<>();
+
+        for(int i = 0; i <= highestChunkNo; i++) {
+            String fileAndChunk = fileId + "_" + i;
+            ConcurrentSkipListSet<Integer> senders = this.perceivedReplicationTable.getOrDefault(fileAndChunk, new ConcurrentSkipListSet<>());
+
+            for(Integer sender : senders) {
+                if(!holders.contains(sender) && sender != peerId)
+                    holders.add(sender);
+            }
+        }
+
+        return holders;
+    }
+
+
+    /**
+     *
+     * @param peerId
+     * @param msg
+     * @param ipAddress
+     * @param port
+     */
+    public void addToFileDeleter(Integer peerId, Message msg, String ipAddress, int port) {
+        fileDeletionList.computeIfAbsent(peerId, key -> new FileDeleter(ipAddress, port)).addMessage(msg);
+    }
+
+
+    public void removeFromFileDeleter(Integer peerId, String fileId) {
+        this.getFileDeleter(peerId).removeMessages(fileId);
+    }
+
+
+    /**
+     *
+     * @return
+     */
+    public FileDeleter getFileDeleter(Integer peerId) {
+        return fileDeletionList.getOrDefault(peerId, new FileDeleter());
+    }
+
+    /**
+     *
+     * @param fileDeletionList
+     */
+    public void setFileDeletionList(ConcurrentHashMap<Integer, FileDeleter> fileDeletionList) {
+        this.fileDeletionList = fileDeletionList;
+    }
+
+    /**
      * Fills the tables with the information present in the directory that was passed to the constructor
      */
     private void loadFromDirectory() {
-        // file restoring table
+        // Creating an empty file restoring table
         this.fileRestoringTable = new ConcurrentHashMap<>();
 
         // Loading desired replication table
@@ -231,6 +292,17 @@ public class ChunkManager {
             percRepObjIn.close();
         } catch (Exception e) {
             this.perceivedReplicationTable = new ConcurrentHashMap<>();
+        }
+
+        // Loading file deletion list
+        try {
+            FileInputStream fileDelFileIn = new FileInputStream(this.directory + fileDeletionInfo);
+            ObjectInputStream fileDelObjIn = new ObjectInputStream(fileDelFileIn);
+            this.perceivedReplicationTable = (ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>)fileDelObjIn.readObject();
+            fileDelFileIn.close();
+            fileDelObjIn.close();
+        } catch (Exception e) {
+            this.fileDeletionList = new ConcurrentHashMap<>();
         }
     }
 
@@ -258,6 +330,18 @@ public class ChunkManager {
             percRepObjOut.writeObject(this.perceivedReplicationTable);
             percRepObjOut.close();
             percRepFileOut.close();
+        } catch (Exception ignore) {
+
+        }
+
+        // Saving file deletion list
+        try {
+            FileOutputStream fileDelFileOut = null;
+            fileDelFileOut = new FileOutputStream(this.directory + fileDeletionInfo);
+            ObjectOutputStream fileDelObjOut = new ObjectOutputStream(fileDelFileOut);
+            fileDelObjOut.writeObject(this.fileDeletionList);
+            fileDelObjOut.close();
+            fileDelFileOut.close();
         } catch (Exception ignore) {
 
         }
