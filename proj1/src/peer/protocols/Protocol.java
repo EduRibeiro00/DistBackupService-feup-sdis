@@ -25,7 +25,7 @@ public abstract class Protocol {
 
 
     /**
-     * Constructor of the peer.
+     * Constructor of the protocol.
      * @param peerID identifier of the peer
      * @param ipAddressMC IP address of the control channel
      * @param portMC port of the control channel

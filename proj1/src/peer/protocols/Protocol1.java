@@ -26,7 +26,7 @@ public class Protocol1 extends Protocol {
     protected ScheduledThreadPoolExecutor executor;     /** thread pool executor */
 
     /**
-     * Constructor of the peer.
+     * Constructor of the protocol.
      * @param peerID identifier of the peer
      * @param ipAddressMC IP address of the control channel
      * @param portMC port of the control channel
@@ -527,13 +527,19 @@ public class Protocol1 extends Protocol {
         }
     }
 
-
+    /**
+     * Method for receiving and parsing a header (only used in protocol for enhancements).
+     * @param header received header
+     */
     @Override
     public void receivedHeader(Header header) {
 
     }
 
-
+    /**
+     * Method to be called when a DELETED message is received (only used in protocol for enhancements).
+     * @param message message received (DELETED)
+     */
     @Override
     public void receiveDeleted(Message message) {
 

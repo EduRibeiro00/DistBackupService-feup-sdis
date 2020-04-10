@@ -1,19 +1,27 @@
 package peer.messages;
 
-import peer.messages.Message;
 import peer.protocols.Protocol;
-
 import java.net.DatagramPacket;
 import java.util.Arrays;
 
-
+/**
+ * Class that represents the handling and processing of received messages.
+ */
 public class MessageHandler {
-    private Protocol protocol;
+    private Protocol protocol; /** instance of the protocol */
 
+    /**
+     * Constructor of the message handler.
+     * @param protocol instance of the protocol
+     */
     public MessageHandler(Protocol protocol) {
         this.protocol = protocol;
     }
 
+    /**
+     * Method that processes a given received message, calling the correct protocol method based on the type of the message.
+     * @param packet datagram packet containing the message received
+     */
     public void process(DatagramPacket packet) {
 
         byte[] data = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());

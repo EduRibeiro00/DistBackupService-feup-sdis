@@ -15,8 +15,20 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Class that represents the protocol with enhancements
+ */
 public class Protocol2 extends Protocol1 {
-
+    /**
+     * Constructor of the protocol.
+     * @param peerID identifier of the peer
+     * @param ipAddressMC IP address of the control channel
+     * @param portMC port of the control channel
+     * @param ipAddressMDB IP address of the data backup channel
+     * @param portMDB port of the data backup channel
+     * @param ipAddressMDR IP address of the data recovery channel
+     * @param portMDR port of the data recovery channel
+     */
     public Protocol2(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) {
         super(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
         this.setVersion("1.1");
@@ -36,7 +48,10 @@ public class Protocol2 extends Protocol1 {
     }
 
 
-
+    /**
+     * Method that backs up a chunk, after a PUTCHUNK message is received.
+     * @param message message received from the initiator peer (PUTCHUNK)
+     */
     @Override
     public void handleBackup(Message message) {
         Header header = message.getHeader();
@@ -80,6 +95,10 @@ public class Protocol2 extends Protocol1 {
     }
 
 
+    /**
+     * Method that sends a chunk back to the initiator peer, when a GETCHUNK message is received.
+     * @param message message received from the initiator peer (GETCHUNK)
+     */
     @Override
     public void sendChunk(Message message) {
         Header header = message.getHeader();
@@ -191,6 +210,10 @@ public class Protocol2 extends Protocol1 {
     }
 
 
+    /**
+     * Method to be called by the initiator peer when a delete operation is to be done.
+     * @param filepath path of the file
+     */
     @Override
     public void initiateDelete(String filepath) {
         String fileId = this.fileManager.getHashForFile(filepath);
@@ -211,6 +234,10 @@ public class Protocol2 extends Protocol1 {
     }
 
 
+    /**
+     * Method to be called when a DELETE message is received.
+     * @param message message received (DELETE)
+     */
     @Override
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
@@ -244,20 +271,28 @@ public class Protocol2 extends Protocol1 {
     }
 
 
-
+    /**
+     * Method to be called when a DELETED message is received (only used in protocol for enhancements).
+     * @param message message received (DELETED)
+     */
     @Override
     public void receiveDeleted(Message message) {
         Header header = message.getHeader();
         this.chunkManager.removeFromFileDeleter(header.getSenderId(), header.getFileId());
     }
 
-
+    /**
+     * Method for receiving and parsing a header (only used in protocol for enhancements).
+     * @param header received header
+     */
     @Override
     public void receivedHeader(Header header) {
         this.chunkManager.getFileDeleter(header.getSenderId()).sendMessages();
     }
 
-
+    /**
+     * Method for send a greetings message to other peers (only used in protocol for enhancements).
+     */
     public void sendGreetings() {
         Message msg = new Message(this.protocolVersion, MessageType.GREETINGS, this.peerID);
         try {

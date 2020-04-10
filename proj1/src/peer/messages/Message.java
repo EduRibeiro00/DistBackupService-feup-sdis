@@ -15,11 +15,11 @@ public class Message implements Serializable {
     private final String lastCRLF = "\r\n\r\n";   /** Double CRLF */
     private Header header;                        /** Header of the message */
     private byte[] body = new byte[0];            /** Body of the message */
-    private InetAddress ipAddress;
-    private int port;
+    private InetAddress ipAddress;                /** IP address from where the message came */
+    private int port;                             /** port number from where the message came */
 
     /**
-     * Constructor for message receiving
+     * Constructor for message receiving.
      * @param data byte array with received data
      */
     public Message(byte[] data) {
@@ -35,7 +35,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Fills the Message class for sending PUTCHUNK
+     * Fills the Message class for sending PUTCHUNK.
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -50,7 +50,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Fills the Message class for message sending STORED, GETCHUNK messages
+     * Fills the Message class for message sending STORED, GETCHUNK messages.
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -64,7 +64,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Fills the Message class for message sending REMOVED messages
+     * Fills the Message class for message sending REMOVED messages.
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -77,7 +77,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Fills the Message class for message sending DELETED messages
+     * Fills the Message class for message sending DELETED messages.
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -89,7 +89,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Fills the Message class for message sending DELETED messages
+     * Fills the Message class for message sending DELETED messages.
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -101,7 +101,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Converts the full message to a byte array
+     * Converts the full message to a byte array.
      * @return byte array of the converted message
      */
     public byte[] convertToBytes() throws IOException {
@@ -114,9 +114,9 @@ public class Message implements Serializable {
 
 
     /**
-     * send
-     * @param ipAddress
-     * @param port
+     * Method that sends the message through a UDP multicast channel, described by an IP address and a port.
+     * @param ipAddress IP address of the multicast channel
+     * @param port port number of the multicast channel
      * @throws IOException
      */
     public void send(String ipAddress, int port) throws IOException {
@@ -135,8 +135,8 @@ public class Message implements Serializable {
 
 
     /**
-     *
-     * @param out
+     * Method that sends the message through a TCP connection, using a buffered output stream
+     * @param out stream to send the message
      */
     public void send(BufferedOutputStream out) throws IOException {
         byte[] messageBytes = this.convertToBytes();
@@ -151,6 +151,7 @@ public class Message implements Serializable {
 
     /**
      * Retrieves the header of the message.
+     * @return header of the message
      */
     public Header getHeader() {
         return header;
@@ -159,39 +160,40 @@ public class Message implements Serializable {
 
     /**
      * Retrieves the body of the message (if any).
-     * @return
+     * @return body of the message
      */
     public byte[] getBody() {
         return body;
     }
 
     /**
-     *
-     * @return
+     * Retrieves the IP address from where the message came from.
+     * @return IP address
      */
     public InetAddress getIpAddress() {
         return ipAddress;
     }
 
+
     /**
-     *
-     * @param ipAddress
+     * Sets the IP address from where the message came from.
+     * @param ipAddress IP address
      */
     public void setIpAddress(InetAddress ipAddress) {
         this.ipAddress = ipAddress;
     }
 
     /**
-     *
-     * @return
+     * Returns the port number from where the message came from.
+     * @return port number
      */
     public int getPort() {
         return port;
     }
 
     /**
-     *
-     * @param port
+     * Sets the port number from where the message came from.
+     * @param port port number
      */
     public void setPort(int port) {
         this.port = port;

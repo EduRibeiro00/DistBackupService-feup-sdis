@@ -7,35 +7,38 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+/**
+ * Class that contains information about the chunks, and methods that manipulate and/or retrieve that information.
+ */
 public class ChunkManager {
-    private final static String desiredReplicationInfo = "desired_replication_info.data";
-    private final static String perceivedReplicationInfo = "perceived_replication_info.data";
-    private final static String fileDeletionInfo = "file_deletion_info.data";
-    private final String directory; // Directory assigned to the peer
+    private final static String desiredReplicationInfo = "desired_replication_info.data";       /** name of the file containing the desired replication of backed up files */
+    private final static String perceivedReplicationInfo = "perceived_replication_info.data";   /** name of the file containing the perceived replication of backed up chunks */
+    private final static String fileDeletionInfo = "file_deletion_info.data";                   /** name of the file containing information about the file deletions (for delete enhancement) */
+    private final String directory;                                                             /** directory assigned to the peer */
 
     /**
-     * Stores the desired replication degree for each file
+     * Stores the desired replication degree for each file.
      * key = fileId
      * value = desiredReplicationDegree
      */
     private ConcurrentHashMap<String, Integer> desiredReplicationTable;
 
     /**
-     * Stores the perceived replication of each of the chunks
+     * Stores the perceived replication of each of the chunks.
      * key = fileId + _ + chunkNo
      * value = set with ids of the senders
      */
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>> perceivedReplicationTable;
 
     /**
-     * Temporarily stores the chunks of a file this peer is trying to restore
+     * Temporarily stores the chunks of a file this peer is trying to restore.
      * key = fileID
      * value = object that contains information/data about the restoring procedure
      */
     private ConcurrentHashMap<String, FileRestorer> fileRestoringTable;
 
     /**
-     * Stores the peers that should delete a file but are inaccessible at the moment
+     * Stores the peers that should delete a file but are inaccessible at the moment.
      * key = peer id
      * value = object that contains information/data about the files/chunks to be deleted
      */
@@ -43,8 +46,8 @@ public class ChunkManager {
 
 
     /**
-     * Fills the ChunkManager class with the items that exist in the directory given
-     * @param peerId path to directory were the peer saves his files
+     * Fills the ChunkManager class with the items that exist in the directory given.
+     * @param peerId peer identifier
      */
     public ChunkManager(int peerId) {
         this.directory = System.getProperty("user.dir") + "/peer/chunks/" + peerId + "/";
@@ -52,10 +55,10 @@ public class ChunkManager {
     }
 
     /**
-     * Updates the perceivedReplicationTable with the possibly new sender
-     * @param fileId of the file that was stored
-     * @param chunkNo of the file that was stored
-     * @param senderId of STORED message received
+     * Updates the perceivedReplicationTable with the possibly new sender.
+     * @param fileId file id of the file that was stored
+     * @param chunkNo chunk number of the file that was stored
+     * @param senderId sender id of STORED message received
      */
     public void addChunkReplication(String fileId, int chunkNo, int senderId) {
         String key = fileId + "_" + chunkNo;
@@ -67,7 +70,7 @@ public class ChunkManager {
     }
 
     /**
-     * Reduces the perceived replication degree for a file's chunk
+     * Reduces the perceived replication degree for a file's chunk.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @param senderId The ID of the peer storing it
@@ -83,8 +86,8 @@ public class ChunkManager {
 
     /**
      * Updates the desiredReplicationTable with the new replicationDegree
-     * @param fileId of the file sent by the peer
-     * @param desiredRepDegree the new replicationDegree
+     * @param fileId file id of the file sent by the peer
+     * @param desiredRepDegree the new replication degree
      */
     public void setDesiredReplication(String fileId, int desiredRepDegree) {
         this.desiredReplicationTable.put(fileId, desiredRepDegree);
@@ -93,8 +96,8 @@ public class ChunkManager {
 
     /**
      * Returns the perceived replication degree of a given file's chunk
-     * @param fileId The ID of the file
-     * @param chunkNo The number of the chunk
+     * @param fileId the ID of the file
+     * @param chunkNo the number of the chunk
      * @return replication degree of chunkNo of fileID
      */
     public int getPerceivedReplication(String fileId, int chunkNo) {
@@ -103,8 +106,8 @@ public class ChunkManager {
 
     /**
      * Deletes the perceived replication degree of a given file's chunk
-     * @param fileId The ID of the file
-     * @param chunk The number of the chunk
+     * @param fileId the ID of the file
+     * @param chunk the number of the chunk
      */
     public void deletePerceivedReplication(String fileId, int chunk) {
         String key = fileId + "_" + chunk;
@@ -116,8 +119,8 @@ public class ChunkManager {
 
     /**
      * Returns the desired replication degree of a file
-     * @param fileId The ID of the file
-     * @return The desired replication degree of the file
+     * @param fileId the ID of the file
+     * @return the desired replication degree of the file
      */
     public int getDesiredReplication(String fileId) {
         return this.desiredReplicationTable.getOrDefault(fileId, -1);
