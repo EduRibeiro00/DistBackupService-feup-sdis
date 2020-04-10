@@ -41,6 +41,9 @@ public class Protocol2 extends Protocol1 {
     public void handleBackup(Message message) {
         Header header = message.getHeader();
 
+        // TODO: confirmar isto
+        this.chunkManager.removeFileDeletion(header.getFileId());
+
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
         this.fileManager.setMaxChunkNo(header.getFileId(), header.getChunkNo());
 
@@ -78,66 +81,6 @@ public class Protocol2 extends Protocol1 {
 
 
     @Override
-    protected void sendGetchunkMsgLoop(String fileId, int chunkNo, int maxNumChunks) {
-        if (chunkNo <= maxNumChunks) {
-            try {
-                new Message(this.protocolVersion, MessageType.GETCHUNK, this.peerID, fileId, chunkNo).send(
-                        this.ipAddressMC, this.portMC
-                );
-                executor.schedule(() -> receiveChunkTCP(this.portMDR, fileId, chunkNo), 0, TimeUnit.SECONDS);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            executor.schedule(() -> sendGetchunkMsgLoop(fileId, chunkNo + 1, maxNumChunks),
-                    new Random().nextInt(401),
-                    TimeUnit.MILLISECONDS);
-        }
-    }
-
-    private void receiveChunkTCP(int port, String fileId, int chunkNo) {
-        // open socket
-        ServerSocket serverSocket;
-        try {
-            serverSocket = new ServerSocket(port);
-            serverSocket.setSoTimeout(this.TIMEOUT);
-
-            Socket socket = serverSocket.accept();
-
-            // open streams
-            BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
-            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-
-            // read
-            byte[] msgContent = new byte[64500];
-            int read_size = in.read(msgContent, 0, 64500);
-
-            if(read_size == -1)
-                return;
-
-            // close streams
-            socket.shutdownOutput();
-            while(in.read() != 0);
-            out.close();
-            in.close();
-
-            // close sockets
-            socket.close();
-            serverSocket.close();
-
-            Message msg = new Message(Arrays.copyOfRange(msgContent, 0, read_size));
-            if(!msg.getHeader().getFileId().equals(fileId) || msg.getHeader().getChunkNo() != chunkNo)
-                return;
-
-            this.chunkManager.insertChunkForRestore(msg.getHeader().getFileId(), msg.getHeader().getChunkNo(), msg.getBody());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    @Override
     public void sendChunk(Message message) {
         Header header = message.getHeader();
         String fileId = header.getFileId();
@@ -161,7 +104,7 @@ public class Protocol2 extends Protocol1 {
                     Socket socket = null;
                     try {
                         // open socket
-                        socket = new Socket(message.getIpAddress(), message.getPort());
+                        socket = new Socket(message.getIpAddress(), message.getHeader().getSenderId() % 65535);
 
                         // open streams
                         BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
@@ -172,15 +115,15 @@ public class Protocol2 extends Protocol1 {
                         byte[] chunkContent = new byte[byteBuffer.limit()];
                         byteBuffer.get(chunkContent);
 
-                        // write
-                        out.write(chunkContent, 0, chunkContent.length);
-                        out.flush();
+                        new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkContent).send(
+                                out
+                        );
 
                         byteBuffer.clear();
 
                         // close streams
                         socket.shutdownOutput();
-                        while (in.read() != 0) ;
+                        while (in.read() != -1) ;
                         out.close();
                         in.close();
 
@@ -188,7 +131,7 @@ public class Protocol2 extends Protocol1 {
                         socket.close();
 
                     } catch (IOException | InterruptedException | ExecutionException e) {
-                        e.printStackTrace();
+                        e.printStackTrace();  // TODO: change this
                     }
 
                     break;

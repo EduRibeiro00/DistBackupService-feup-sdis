@@ -1,11 +1,8 @@
 package peer.messages;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -134,6 +131,21 @@ public class Message implements Serializable {
         mCastSkt.send(mcast_packet);
 
         System.out.println("Sending message: " + this.header);
+    }
+
+
+    /**
+     *
+     * @param out
+     */
+    public void send(BufferedOutputStream out) throws IOException {
+        byte[] messageBytes = this.convertToBytes();
+
+        // write
+        out.write(messageBytes, 0, messageBytes.length);
+        out.flush();
+
+        System.out.println("Sending message (TCP): " + this.header);
     }
 
 

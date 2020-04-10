@@ -71,7 +71,12 @@ public class Peer implements RemoteInterface {
 
         System.out.println("Started all threads...");
 
-        this.protocol.sendGreetings();
+        if (protocolVersion.equals("1.1")) {
+            this.protocol.sendGreetings();
+            // TODO: ver melhor o que usar na porta
+            ReceiverThreadTCP tcpThread = new ReceiverThreadTCP(protocol, peerID % 65535, BUFFER_SIZE, N_THREADS_PER_CHANNEL);
+            new Thread(tcpThread).start();
+        }
     }
 
 
