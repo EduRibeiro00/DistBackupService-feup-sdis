@@ -273,7 +273,7 @@ public class Protocol1 extends Protocol {
         sendDeleteMsgLoop(msg, 0, filepath, fileId);
     }
 
-    private void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
+    protected void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
         try {
             msg.send(this.ipAddressMC, this.portMC);
         } catch (IOException e) {

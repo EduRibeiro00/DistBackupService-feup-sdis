@@ -55,8 +55,14 @@ public class MessageHandler {
             case REMOVED:
                 this.protocol.removed(message);
                 break;
+            case DELETED:
+                this.protocol.receiveDeleted(message);
+                break;
             default:
                 break;
         }
+
+        if(this.protocol.getVersion().equals("1.1"))
+            this.protocol.receivedHeader(message.getHeader());
     }
 }

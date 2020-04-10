@@ -2,6 +2,7 @@ package peer.protocols;
 
 import peer.ChunkManager;
 import peer.FileManager;
+import peer.messages.Header;
 import peer.messages.Message;
 
 
@@ -67,10 +68,14 @@ public abstract class Protocol {
     // Delete
     public abstract void initiateDelete(String filepath);
     public abstract void delete(Message message);
+    public void receiveDeleted(Message message) {}
 
     // Reclaim
     public abstract void reclaim(int newMaximumStorageCapacity);
     public abstract void removed(Message message);
+
+    // Header handling
+    public void receivedHeader(Header header) {}
 
     // State
     public abstract String state();
