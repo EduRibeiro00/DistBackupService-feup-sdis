@@ -18,10 +18,23 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.*;
 
+/**
+ * Class that represents the normal, base protocol for the peer
+ */
 public class Protocol1 extends Protocol {
-    protected int numberOfThreads = 20;
-    protected ScheduledThreadPoolExecutor executor;
+    protected int numberOfThreads = 20;                 /** constant with the number of threads for the thread pool */
+    protected ScheduledThreadPoolExecutor executor;     /** thread pool executor */
 
+    /**
+     * Constructor of the peer.
+     * @param peerID identifier of the peer
+     * @param ipAddressMC IP address of the control channel
+     * @param portMC port of the control channel
+     * @param ipAddressMDB IP address of the data backup channel
+     * @param portMDB port of the data backup channel
+     * @param ipAddressMDR IP address of the data recovery channel
+     * @param portMDR port of the data recovery channel
+     */
     public Protocol1(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) {
         super(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
 
@@ -30,11 +43,19 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called by the initiator peer when a backup operation is to be done.
+     * @param filepath path of the file
+     * @param modificationDate modification date of the file
+     * @param chunkNo chunk number
+     * @param fileContent content of the file/chunk to be backed up
+     * @param replicationDeg desired replication degree for the chunk
+     */
     @Override
-    public void initiateBackup(String filePath, String modificationDate, int chunkNo, byte[] fileContent, int replicationDeg) {
+    public void initiateBackup(String filepath, String modificationDate, int chunkNo, byte[] fileContent, int replicationDeg) {
         String encodedFileId = null;
         try {
-            encodedFileId = this.fileManager.insertHashForFile(filePath, modificationDate);
+            encodedFileId = this.fileManager.insertHashForFile(filepath, modificationDate);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -43,6 +64,11 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method that tells other peers to delete the chunks of a file if the content of the chunks is outdated.
+     * @param filepath path of the file
+     * @param modificationDate modification date of the file
+     */
     @Override
     public void deleteIfOutdated(String filepath, String modificationDate) {
         String fileID = null;
@@ -62,6 +88,13 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method that tells other peers to backup a specific chunk (to be called by the initiator peer).
+     * @param fileId identifier of the file
+     * @param chunkNo chunk number
+     * @param fileContent content of the file/chunk to be backed up
+     * @param replicationDeg desired replication degree for the chunk
+     */
     @Override
     protected void backupChunk(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) {
         this.fileManager.setMaxChunkNo(fileId, chunkNo);
@@ -73,6 +106,15 @@ public class Protocol1 extends Protocol {
         sendPutChunkMsgLoop(msg, 0, fileId, chunkNo, replicationDeg);
     }
 
+
+    /**
+     * Method that sends at most 5 PUTCHUNK messages with different threads, in order to secure the wanted replication degree.
+     * @param msg message to be sent (PUTCHUNK)
+     * @param iteration iteration number
+     * @param fileId file identifier
+     * @param chunkNo chunk number
+     * @param replicationDeg replication degree
+     */
     private void sendPutChunkMsgLoop(Message msg, int iteration, String fileId, int chunkNo, int replicationDeg) {
         if(this.chunkManager.getPerceivedReplication(fileId, chunkNo) < replicationDeg) {
             try {
@@ -81,14 +123,18 @@ public class Protocol1 extends Protocol {
                 e.printStackTrace();
             }
 
-            if (iteration < 5)
+            if (iteration < 4)
                 executor.schedule(() -> sendPutChunkMsgLoop(msg, iteration + 1, fileId, chunkNo, replicationDeg),
-                        (long) (1000 * Math.pow(2, iteration)),
-                        TimeUnit.MILLISECONDS);
+                        (long) (Math.pow(2, iteration)),
+                        TimeUnit.SECONDS);
         }
     }
 
 
+    /**
+     * Method that backs up a chunk, after a PUTCHUNK message is received.
+     * @param message message received from the initiator peer (PUTCHUNK)
+     */
     @Override
     public void handleBackup(Message message) {
         Header header = message.getHeader();
@@ -123,6 +169,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called after a STORED message is received.
+     * @param message message received from the peer that backed up the chunk
+     */
     @Override
     public void stored(Message message) {
         Header header = message.getHeader();
@@ -131,6 +181,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called by the initiator peer when a restore operation is to be done.
+     * @param filepath path of the file
+     */
     @Override
     public void initiateRestore(String filepath) {
         // get the file ID of the chunk
@@ -158,6 +212,12 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method that sends all needed GETCHUNK messages, requesting all chunks of the file.
+     * @param fileId file identifier
+     * @param chunkNo chunk number
+     * @param maxNumChunks number of chunks that the file has
+     */
     protected void sendGetchunkMsgLoop(String fileId, int chunkNo, int maxNumChunks) {
         if (chunkNo <= maxNumChunks) {
             try {
@@ -175,6 +235,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method that sends a chunk back to the initiator peer, when a GETCHUNK message is received.
+     * @param message message received from the initiator peer (GETCHUNK)
+     */
     @Override
     public void sendChunk(Message message) {
         Header header = message.getHeader();
@@ -241,6 +305,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method that is called by the initiator peer when a CHUNK message is received.
+     * @param message message received (CHUNK)
+     */
     @Override
     public void receiveChunk(Message message) {
         Header header = message.getHeader();
@@ -260,6 +328,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called by the initiator peer when a delete operation is to be done.
+     * @param filepath path of the file
+     */
     @Override
     public void initiateDelete(String filepath) {
         String fileId = this.fileManager.getHashForFile(filepath);
@@ -273,6 +345,14 @@ public class Protocol1 extends Protocol {
         sendDeleteMsgLoop(msg, 0, filepath, fileId);
     }
 
+
+    /**
+     * Method that sends the needed DELETE messages to the peers, and updates data structures at the end.
+     * @param msg message to be sent (DELETE)
+     * @param iteration iteration number
+     * @param filepath path of the file
+     * @param fileId file identifier
+     */
     private void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
         try {
             msg.send(this.ipAddressMC, this.portMC);
@@ -300,6 +380,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called when a DELETE message is received.
+     * @param message message received (DELETE)
+     */
     @Override
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
@@ -321,6 +405,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called by the initiator peer when a reclaim operation is to be done.
+     * @param newMaximumStorageCapacity new maximum storage capacity for the peer
+     */
     @Override
     public void reclaim(int newMaximumStorageCapacity) {
         this.fileManager.setMaximumStorageSpace(newMaximumStorageCapacity);
@@ -355,6 +443,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called when a REMOVED message is received.
+     * @param message message received (REMOVED)
+     */
     @Override
     public void removed(Message message) {
         String fileId = message.getHeader().getFileId();
@@ -424,6 +516,10 @@ public class Protocol1 extends Protocol {
     }
 
 
+    /**
+     * Method to be called by the a peer when its current state is requested.
+     * @return string containing information about the current state of the peer
+     */
     @Override
     public String state() {
         StringBuilder stateInformation = new StringBuilder();

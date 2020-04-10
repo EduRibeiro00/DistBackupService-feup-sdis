@@ -22,7 +22,7 @@ import java.rmi.registry.Registry;
 public class TestApp {
     /**
      * Main method.
-     * @param args Command line arguments
+     * @param args command line arguments
      */
     public static void main(String[] args) {
         // check arguments
