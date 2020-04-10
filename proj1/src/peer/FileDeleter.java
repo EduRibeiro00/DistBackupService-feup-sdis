@@ -3,10 +3,11 @@ package peer;
 import peer.messages.Message;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class FileDeleter {
+public class FileDeleter implements Serializable {
     private String ipAddress;
     private int port;
     private ConcurrentHashMap<String, Message> fileToDeletes;
@@ -27,8 +28,9 @@ public class FileDeleter {
         this.fileToDeletes.put(msg.getHeader().getFileId(), msg);
     }
 
-    public void removeMessages(String fileId) {
+    public boolean removeMessages(String fileId) {
         this.fileToDeletes.remove(fileId);
+        return this.fileToDeletes.isEmpty();
     }
 
     public void sendMessages() {
@@ -42,4 +44,5 @@ public class FileDeleter {
 
         fileToDeletes = new ConcurrentHashMap<>();
     }
+
 }

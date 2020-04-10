@@ -20,8 +20,22 @@ public class Protocol2 extends Protocol1 {
     public Protocol2(int peerID, String ipAddressMC, int portMC, String ipAddressMDB, int portMDB, String ipAddressMDR, int portMDR) {
         super(peerID, ipAddressMC, portMC, ipAddressMDB, portMDB, ipAddressMDR, portMDR);
         this.setVersion("1.1");
-        this.sendGreetings();
     }
+
+    /**
+     * Method that tells other peers to backup a specific chunk (to be called by the initiator peer).
+     * @param fileId identifier of the file
+     * @param chunkNo chunk number
+     * @param fileContent content of the file/chunk to be backed up
+     * @param replicationDeg desired replication degree for the chunk
+     */
+    @Override
+    protected void backupChunk(String fileId, int chunkNo, byte[] fileContent, int replicationDeg) {
+        this.chunkManager.removeFileDeletion(fileId);
+        super.backupChunk(fileId, chunkNo, fileContent, replicationDeg);
+    }
+
+
 
     @Override
     public void handleBackup(Message message) {

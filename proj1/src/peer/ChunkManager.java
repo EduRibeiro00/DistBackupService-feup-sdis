@@ -35,7 +35,9 @@ public class ChunkManager {
     private ConcurrentHashMap<String, FileRestorer> fileRestoringTable;
 
     /**
-     *
+     * Stores the peers that should delete a file but are inaccessible at the moment
+     * key = peer id
+     * value = object that contains information/data about the files/chunks to be deleted
      */
     ConcurrentHashMap<Integer, FileDeleter> fileDeletionList;
 
@@ -241,13 +243,16 @@ public class ChunkManager {
      */
     public void addToFileDeleter(Integer peerId, Message msg, String ipAddress, int port) {
         fileDeletionList.computeIfAbsent(peerId, key -> new FileDeleter(ipAddress, port)).addMessage(msg);
+        this.saveToDirectory();
     }
 
 
     public void removeFromFileDeleter(Integer peerId, String fileId) {
-        this.getFileDeleter(peerId).removeMessages(fileId);
+        if (this.getFileDeleter(peerId).removeMessages(fileId) ) {
+            this.fileDeletionList.remove(peerId);
+        }
+        this.saveToDirectory();
     }
-
 
     /**
      *
@@ -259,11 +264,15 @@ public class ChunkManager {
 
     /**
      *
-     * @param fileDeletionList
      */
-    public void setFileDeletionList(ConcurrentHashMap<Integer, FileDeleter> fileDeletionList) {
-        this.fileDeletionList = fileDeletionList;
+    public void removeFileDeletion(String fileId) {
+        Set<Map.Entry<Integer, FileDeleter>> entrySet = this.fileDeletionList.entrySet();
+
+        for (Map.Entry<Integer, FileDeleter> entry : entrySet) {
+            this.removeFromFileDeleter(entry.getKey(), fileId);
+        }
     }
+
 
     /**
      * Fills the tables with the information present in the directory that was passed to the constructor
@@ -298,12 +307,13 @@ public class ChunkManager {
         try {
             FileInputStream fileDelFileIn = new FileInputStream(this.directory + fileDeletionInfo);
             ObjectInputStream fileDelObjIn = new ObjectInputStream(fileDelFileIn);
-            this.perceivedReplicationTable = (ConcurrentHashMap<String, ConcurrentSkipListSet<Integer>>)fileDelObjIn.readObject();
+            this.fileDeletionList = (ConcurrentHashMap<Integer, FileDeleter>)fileDelObjIn.readObject();
             fileDelFileIn.close();
             fileDelObjIn.close();
         } catch (Exception e) {
             this.fileDeletionList = new ConcurrentHashMap<>();
         }
+
     }
 
     /**

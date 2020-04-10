@@ -177,7 +177,12 @@ public abstract class Protocol {
     public abstract void removed(Message message);
 
     // --------------------------
-    // Header handling
+    // General
+
+    /**
+     * Abstract function for send a greetings message to other peers (only used in protocol for enhancements).
+     */
+    public abstract void sendGreetings();
 
     /**
      * Abstract function for receiving and parsing a header (only used in protocol for enhancements).

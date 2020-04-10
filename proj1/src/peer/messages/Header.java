@@ -1,5 +1,6 @@
 package peer.messages;
 
+import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 /**
  * Class responsible for handling the header of a message either when receiving or when sending
  */
-public class Header {
+public class Header implements Serializable {
     private String version;             /** Version of the protocol */
     private MessageType messageType;    /** Type of the message */
     private int senderId;               /** ID of the sender peer */
@@ -18,17 +19,6 @@ public class Header {
     private int chunkNo;                /** Number of the chunk */
     private int replicationDeg;         /** Replication degree */
     private List<String> other;         /** Other fields of the header */
-
-    private static List<String> messageTypeList = Arrays.asList(
-        "PUTCHUNK",
-        "STORED",
-        "GETCHUNK",
-        "CHUNK",
-        "DELETE",
-        "REMOVED",
-        "GREETINGS",
-        "DELETED"
-    ); /** Different types of messages */
 
 
     /**
@@ -47,6 +37,7 @@ public class Header {
 
         switch (this.messageType) {
             case GREETINGS:
+                this.fileId = "";
                 break;
             case STORED: case GETCHUNK: case CHUNK: case REMOVED:
                 this.fileId = header.remove(0);

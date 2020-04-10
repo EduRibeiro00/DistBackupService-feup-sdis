@@ -44,6 +44,15 @@ public class Protocol1 extends Protocol {
 
 
     /**
+     * Method for send a greetings message to other peers (only used in protocol for enhancements).
+     */
+    @Override
+    public void sendGreetings() {
+
+    }
+
+
+    /**
      * Method to be called by the initiator peer when a backup operation is to be done.
      * @param filepath path of the file
      * @param modificationDate modification date of the file

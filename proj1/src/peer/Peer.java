@@ -70,6 +70,8 @@ public class Peer implements RemoteInterface {
         this.service = Executors.newFixedThreadPool(N_THREADS_PER_CHANNEL);
 
         System.out.println("Started all threads...");
+
+        this.protocol.sendGreetings();
     }
 
 

@@ -2,6 +2,7 @@ package peer.messages;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Class that represents a message that will be sent between peers to communicate
  */
-public class Message {
+public class Message implements Serializable {
     private final String crlf = "\r\n";           /** Carriage return and line feed, to  */
     private final String lastCRLF = "\r\n\r\n";   /** Double CRLF */
     private Header header;                        /** Header of the message */
