@@ -61,37 +61,37 @@ public class Protocol2 extends Protocol1 {
 
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
         this.fileManager.setMaxChunkNo(header.getFileId(), header.getChunkNo());
+        executor.schedule(() -> {
+            try {
+                if(this.chunkManager.getPerceivedReplication(header.getFileId(), header.getChunkNo()) <
+                        this.chunkManager.getDesiredReplication(header.getFileId())) {
 
-        try {
-            if(this.chunkManager.getPerceivedReplication(header.getFileId(), header.getChunkNo()) <
-                    this.chunkManager.getDesiredReplication(header.getFileId())) {
+                    if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
+                        return;
+                    }
 
-                if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
-                    return;
+                    this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
                 }
 
-                this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
+                if (this.fileManager.isChunkStored(header.getFileId(), header.getChunkNo())) {
+                    executor.schedule(() -> {
+                        try {
+                            new Message(this.protocolVersion,
+                                    MessageType.STORED,
+                                    this.peerID,
+                                    header.getFileId(),
+                                    header.getChunkNo()
+                            ).send(this.ipAddressMC, this.portMC);
+                        } catch (IOException e) {
+                            System.err.println("Failed to send STORED message");
+                        }
+                    }, new Random().nextInt(401), TimeUnit.MILLISECONDS);
+
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to store chunk " + header.getChunkNo() + " of file: " + header.getFileId());;
             }
-
-            if (this.fileManager.isChunkStored(header.getFileId(), header.getChunkNo())) {
-                executor.schedule(() -> {
-                    try {
-                        new Message(this.protocolVersion,
-                                MessageType.STORED,
-                                this.peerID,
-                                header.getFileId(),
-                                header.getChunkNo()
-                        ).send(this.ipAddressMC, this.portMC);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }, new Random().nextInt(401), TimeUnit.MILLISECONDS);
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        }, new Random().nextInt(601), TimeUnit.MILLISECONDS);
     }
 
 
