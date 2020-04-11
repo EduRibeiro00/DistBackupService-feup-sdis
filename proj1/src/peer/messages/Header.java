@@ -53,7 +53,7 @@ public class Header implements Serializable {
                     if(headerLines.size() < 1) {
                         throw new IllegalArgumentException("Invalid message header received");
                     }
-                    this.portNumber = Integer.parseInt(headerLines.get(0));
+                    this.portNumber = Integer.parseInt(headerLines.get(0).trim());
                 }
             case STORED: case GETCHUNK: case REMOVED:
                 this.fileId = headerMain.remove(0);

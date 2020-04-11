@@ -30,7 +30,7 @@ public class MessageHandler {
         try {
             message = new Message(data);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Message not recognized: ignoring...");
             return;
         }
 

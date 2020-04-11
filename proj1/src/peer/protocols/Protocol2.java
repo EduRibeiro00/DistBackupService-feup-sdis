@@ -160,7 +160,6 @@ public class Protocol2 extends Protocol1 {
                     System.err.println("Failed to read from TCP socket");
                 }
 
-
                 break;
             default:
                 break;
@@ -226,13 +225,14 @@ public class Protocol2 extends Protocol1 {
             // send message with chunk
             switch (header.getVersion()) {
                 case "1.1": //TODO: compor try/catch
+                    ServerSocket serverSocket;
                     Socket chunkSocket;
                     BufferedInputStream in;
                     BufferedOutputStream out;
                     try {
-                        ServerSocket serverSocket = new ServerSocket(0);
+                        serverSocket = new ServerSocket(0);
                         int chunkPort = serverSocket.getLocalPort();
-                        serverSocket.setSoTimeout(TIMEOUT);
+                        serverSocket.setSoTimeout(TIMEOUT * 5);
 
                         new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkPort)
                                 .send(this.ipAddressMDR, this.portMDR);
@@ -263,6 +263,7 @@ public class Protocol2 extends Protocol1 {
 
                             // close socket
                             chunkSocket.close();
+                            serverSocket.close();
                         } catch (IOException ignored) { }
                         return;
                     }
@@ -278,9 +279,11 @@ public class Protocol2 extends Protocol1 {
 
                         // close socket
                         chunkSocket.close();
+                        serverSocket.close();
                     } catch (IOException e) {
                         System.err.println("Failed to write to TCP socket");
                     }
+
                     break;
 
                 case "1.0":
