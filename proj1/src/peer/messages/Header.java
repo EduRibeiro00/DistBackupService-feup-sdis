@@ -253,7 +253,7 @@ public class Header implements Serializable {
                 break;
         }
 
-        header += " \r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed
+        header += " \r\n";
 
         if(messageType == MessageType.CHUNK && version.equals("1.1")){
             header += this.portNumber + " \r\n";
