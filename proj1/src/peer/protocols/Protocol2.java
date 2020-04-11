@@ -117,78 +117,55 @@ public class Protocol2 extends Protocol1 {
                 return;
             }
 
+            MulticastSocket mCastSkt;
+
+            long waitTime = new Random().nextInt(401);
+            try {
+                mCastSkt = new MulticastSocket(this.portMDR);
+                mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDR));
+                mCastSkt.setTimeToLive(1);
+                mCastSkt.setSoTimeout((int) waitTime);
+            } catch (IOException e) {
+                e.printStackTrace(); // TODO: change this
+                return;
+            }
+
+            byte[] buffer = new byte[64500];
+            DatagramPacket packet = new DatagramPacket(buffer, 64500);
+            try {
+                while (waitTime > 0) {
+                    long before = System.currentTimeMillis();
+                    mCastSkt.receive(packet);
+                    waitTime -= System.currentTimeMillis() - before;
+
+                    Message msg = new Message(packet.getData());
+                    if (msg.getHeader().getMessageType() == MessageType.CHUNK &&
+                            msg.getHeader().getFileId().equals(fileId) &&
+                            msg.getHeader().getChunkNo() == chunkNo) {
+                        return;
+                    }
+                    mCastSkt.setSoTimeout((int) waitTime);
+                }
+            } catch (IOException ignore) {
+            }
+
+            // send message with chunk
             switch (header.getVersion()) {
                 case "1.1":
-
-                    Socket socket = null;
                     try {
-                        // open socket
-                        socket = new Socket(message.getIpAddress(), message.getHeader().getSenderId() % 65535);
+                        ServerSocket serverSocket = new ServerSocket(0);
+                        int chunkPort = serverSocket.getLocalPort();
 
-                        // open streams
-                        BufferedInputStream in = new BufferedInputStream(socket.getInputStream());
-                        BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+                        new Message(this.protocolVersion, )
 
-                        future.get();
-                        byteBuffer.flip();
-                        byte[] chunkContent = new byte[byteBuffer.limit()];
-                        byteBuffer.get(chunkContent);
-
-                        new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkContent).send(
-                                out
-                        );
-
-                        byteBuffer.clear();
-
-                        // close streams
-                        socket.shutdownOutput();
-                        while (in.read() != -1) ;
-                        out.close();
-                        in.close();
-
-                        // close socket
-                        socket.close();
-
-                    } catch (IOException | InterruptedException | ExecutionException e) {
-                        e.printStackTrace();  // TODO: change this
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
 
                     break;
 
                 case "1.0":
-                    MulticastSocket mCastSkt;
 
-                    long waitTime = new Random().nextInt(401);
-                    try {
-                        mCastSkt = new MulticastSocket(this.portMDR);
-                        mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDR));
-                        mCastSkt.setTimeToLive(1);
-                        mCastSkt.setSoTimeout((int) waitTime);
-                    } catch (IOException e) {
-                        e.printStackTrace(); // TODO: change this
-                        return;
-                    }
-
-                    byte[] buffer = new byte[64500];
-                    DatagramPacket packet = new DatagramPacket(buffer, 64500);
-                    try {
-                        while (waitTime > 0) {
-                            long before = System.currentTimeMillis();
-                            mCastSkt.receive(packet);
-                            waitTime -= System.currentTimeMillis() - before;
-
-                            Message msg = new Message(packet.getData());
-                            if (msg.getHeader().getMessageType() == MessageType.CHUNK &&
-                                    msg.getHeader().getFileId().equals(fileId) &&
-                                    msg.getHeader().getChunkNo() == chunkNo) {
-                                return;
-                            }
-                            mCastSkt.setSoTimeout((int) waitTime);
-                        }
-                    } catch (IOException ignore) {
-                    }
-
-                    // send message with chunk
                     try {
                         future.get();
                         byteBuffer.flip();

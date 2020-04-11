@@ -26,7 +26,7 @@ public class Message implements Serializable {
         String message = new String(data, StandardCharsets.ISO_8859_1);
         ArrayList<String> split = new ArrayList<>(Arrays.asList(message.split(this.lastCRLF, 2)));
 
-        this.header = new Header(new ArrayList<>(Arrays.asList(split.remove(0).split(" "))));
+        this.header = new Header(split.remove(0));
 
         if (split.size() != 0) {
             this.body = split.get(0).getBytes(StandardCharsets.ISO_8859_1);
@@ -50,7 +50,7 @@ public class Message implements Serializable {
 
 
     /**
-     * Fills the Message class for message sending STORED, GETCHUNK messages.
+     * Fills the Message class for sending STORED, CHUNK messages.
      * @param version the version of the protocol to be used
      * @param msgType the type of message to be sent
      * @param senderId the ID of the message sender
@@ -60,6 +60,20 @@ public class Message implements Serializable {
     public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, byte[] body) {
         this.header = new Header(version, msgType, senderId, fileId, chunkNo);
         this.body = body;
+    }
+
+
+    /**
+     * Fills the Message class for sending CHUNK with enhancement.
+     * @param version the version of the protocol to be used
+     * @param msgType the type of message to be sent
+     * @param senderId the ID of the message sender
+     * @param fileId the file identifier in the backup service, as the result of SHA256
+     * @param chunkNo the chunk number of the specified file (may be unused)
+     * @param port port number of the TCP connection for sending the chunk
+     */
+    public Message(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int port) {
+        this.header = new Header(version, msgType, senderId, fileId, chunkNo, port);
     }
 
 
@@ -97,7 +111,6 @@ public class Message implements Serializable {
     public Message(String version, MessageType msgType, int senderId) {
         this.header = new Header(version, msgType, senderId);
     }
-
 
 
     /**

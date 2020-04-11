@@ -19,13 +19,17 @@ public class Header implements Serializable {
     private int chunkNo;                /** Number of the chunk */
     private int replicationDeg;         /** Replication degree */
     private List<String> other;         /** Other fields of the header */
+    private int portNumber;             /** Port number for TCP connection */
 
 
     /**
      * Fills the Header class based on the elements of the header list, for message receiving
      * @param header a list of elements received from a peer
      */
-    public Header(ArrayList<String> header) throws IllegalArgumentException {
+    public Header(String header) throws IllegalArgumentException {
+        ArrayList<String> headerLines = new ArrayList<>(Arrays.asList(header.split("\r\n")));
+
+
         // No point in processing the rest if we don't know any message with header size < 3
         if(header.size() < 3) {
             throw new IllegalArgumentException("Invalid message header received");
@@ -39,7 +43,7 @@ public class Header implements Serializable {
             case GREETINGS:
                 this.fileId = "";
                 break;
-            case STORED: case GETCHUNK: case CHUNK: case REMOVED:
+            case STORED: case GETCHUNK: case REMOVED:
                 this.fileId = header.remove(0);
                 if(header.size() != 1) {
                     throw new IllegalArgumentException("Invalid message header received");
@@ -53,6 +57,13 @@ public class Header implements Serializable {
                 }
                 this.chunkNo = Integer.parseInt(header.remove(0));
                 this.replicationDeg = Integer.parseInt(header.remove(0));
+                break;
+            case CHUNK:
+                this.fileId = header.remove(0);
+                if(header.size() != 1) {
+                    throw new IllegalArgumentException("Invalid message header received");
+                }
+                this.chunkNo = Integer.parseInt(header.remove(0));
                 break;
             default:
                 this.fileId = header.remove(0);

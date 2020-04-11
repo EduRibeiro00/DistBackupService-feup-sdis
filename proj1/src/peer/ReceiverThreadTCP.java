@@ -65,9 +65,6 @@ public class ReceiverThreadTCP implements Runnable {
             byte[] msgContent = new byte[this.bufSize];
             int read_size = in.read(msgContent, 0, this.bufSize);
 
-            if(read_size == -1)
-                return;
-
             // close streams
             socket.shutdownOutput();
             while(in.read() != -1);
@@ -76,6 +73,9 @@ public class ReceiverThreadTCP implements Runnable {
 
             // close socket
             socket.close();
+
+            if(read_size == -1)
+                return;
 
             Message msg = new Message(Arrays.copyOfRange(msgContent, 0, read_size));
 
