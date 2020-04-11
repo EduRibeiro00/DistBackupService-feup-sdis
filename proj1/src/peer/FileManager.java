@@ -208,6 +208,12 @@ public class FileManager {
     }
 
 
+
+    public boolean amFileOwner(String fileId) {
+        return this.hashBackedUpFiles.search(1, (key, value) -> value.equals(fileId) ? key : null) != null;
+    }
+
+
     /**
      * Inserts hash for file
      * @param filepath The file path
@@ -527,5 +533,4 @@ public class FileManager {
             hashBackedUpFilesFileOut.close();
         } catch (Exception ignore) { }
     }
-
 }

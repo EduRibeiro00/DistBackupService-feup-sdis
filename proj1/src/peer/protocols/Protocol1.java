@@ -151,6 +151,10 @@ public class Protocol1 extends Protocol {
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
         this.fileManager.setMaxChunkNo(header.getFileId(), header.getChunkNo());
 
+        if(this.fileManager.amFileOwner(header.getFileId())) {
+            return;
+        }
+
         try {
             if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
                 return;
