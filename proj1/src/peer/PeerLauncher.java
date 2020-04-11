@@ -7,10 +7,13 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 /**
- * Class that has the function to create and launch a peer
+ * Class that has the function to create and launch a peer.
  */
 public class PeerLauncher {
-
+    /**
+     * Main of the peer program.
+     * @param args command line arguments
+     */
     public static void main(String[] args) {
         // check arguments
         if (args.length != 9) {
