@@ -57,7 +57,6 @@ public class Protocol2 extends Protocol1 {
     public void handleBackup(Message message) {
         Header header = message.getHeader();
 
-        // TODO: confirmar isto
         this.chunkManager.removeFileDeletion(header.getFileId());
 
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
