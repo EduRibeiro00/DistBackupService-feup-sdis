@@ -146,6 +146,13 @@ public class ChunkManager {
         this.fileRestoringTable.put(fileId, new FileRestorer(filename, fileId, maxNumChunks));
     }
 
+    /**
+     * Returns true if the fileId is waiting to be stored
+     * @param fileId ID of the file
+     */
+    public boolean isChunkForRestore(String fileId) {
+        return this.fileRestoringTable.containsKey(fileId);
+    }
 
     /**
      * Function for temporarily saving a chunk when the peer is trying to restore a file

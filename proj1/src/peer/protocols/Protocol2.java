@@ -1,6 +1,7 @@
 package peer.protocols;
 
 import peer.FileDeleter;
+import peer.FileRestorer;
 import peer.messages.Header;
 import peer.messages.Message;
 import peer.messages.MessageType;
@@ -96,6 +97,77 @@ public class Protocol2 extends Protocol1 {
 
 
     /**
+     * Method that is called by the initiator peer when a CHUNK message is received.
+     * @param message message received (CHUNK)
+     */
+    @Override
+    public void receiveChunk(Message message) {
+        Header header = message.getHeader();
+
+        switch (header.getVersion()) {
+            case "1.0":
+                super.receiveChunk(message);
+                break;
+            case "1.1":
+                if(!this.chunkManager.isChunkForRestore(header.getFileId())) {
+                    return;
+                }
+
+                Socket chunkSocket;
+                try {
+                    chunkSocket = new Socket(message.getIpAddress(), header.getPortNumber());
+                } catch (IOException e) {
+                    System.err.println("Socket connection unavailable");
+                    return;
+                }
+
+                try {
+                    // open streams
+                    BufferedInputStream in = new BufferedInputStream(chunkSocket.getInputStream());
+                    BufferedOutputStream out = new BufferedOutputStream(chunkSocket.getOutputStream());
+
+                    // read
+                    byte[] chunk = new byte[CHUNK_SIZE];
+                    int read_size = in.read(chunk, 0, CHUNK_SIZE);
+
+                    // close streams
+                    chunkSocket.shutdownOutput();
+                    while(in.read() != -1);
+                    out.close();
+                    in.close();
+
+                    // close socket
+                    chunkSocket.close();
+
+                    if(read_size == -1) {
+                        System.err.println("TCP socket closed output before sending message");
+                        return;
+                    }
+
+                    FileRestorer fileRestorer = this.chunkManager.insertChunkForRestore(
+                            header.getFileId(),
+                            header.getChunkNo(),
+                            chunk
+                    );
+
+                    // If all the file's chunks were saved
+                    if (fileRestorer != null) {
+                        // creates and restores the file
+                        executor.execute(() -> this.fileManager.restoreFileFromChunks(fileRestorer));
+                        this.chunkManager.deleteChunksForRestore(header.getFileId());
+                    }
+                } catch (IOException e) {
+                    System.err.println("Failed to read from TCP socket");
+                }
+
+
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
      * Method that sends a chunk back to the initiator peer, when a GETCHUNK message is received.
      * @param message message received from the initiator peer (GETCHUNK)
      */
@@ -149,19 +221,66 @@ public class Protocol2 extends Protocol1 {
             } catch (IOException ignore) {
             }
 
+            byte[] chunkContent;
+
             // send message with chunk
             switch (header.getVersion()) {
-                case "1.1":
+                case "1.1": //TODO: compor try/catch
+                    Socket chunkSocket;
+                    BufferedInputStream in;
+                    BufferedOutputStream out;
                     try {
                         ServerSocket serverSocket = new ServerSocket(0);
                         int chunkPort = serverSocket.getLocalPort();
+                        serverSocket.setSoTimeout(TIMEOUT);
 
-                        new Message(this.protocolVersion, )
+                        new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkPort)
+                                .send(this.ipAddressMDR, this.portMDR);
 
+                        chunkSocket = serverSocket.accept();
+                        in = new BufferedInputStream(chunkSocket.getInputStream());
+                        out = new BufferedOutputStream(chunkSocket.getOutputStream());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.out.println("Connection timed out");
+                        return;
                     }
 
+                    try {
+                        future.get();
+                        byteBuffer.flip();
+                        chunkContent = new byte[byteBuffer.limit()];
+                        byteBuffer.get(chunkContent);
+                        byteBuffer.clear();
+                    } catch (InterruptedException | ExecutionException e) {
+                        System.err.println("Error retrieving chunk from files");
+
+                        // close streams
+                        try {
+                            chunkSocket.shutdownOutput();
+                            while(in.read() != -1);
+                            out.close();
+                            in.close();
+
+                            // close socket
+                            chunkSocket.close();
+                        } catch (IOException ignored) { }
+                        return;
+                    }
+
+                    try {
+                        out.write(chunkContent);
+
+                        // close streams
+                        chunkSocket.shutdownOutput();
+                        while(in.read() != -1);
+                        out.close();
+                        in.close();
+
+                        // close socket
+                        chunkSocket.close();
+                    } catch (IOException e) {
+                        System.err.println("Failed to write to TCP socket");
+                    }
                     break;
 
                 case "1.0":
@@ -169,7 +288,7 @@ public class Protocol2 extends Protocol1 {
                     try {
                         future.get();
                         byteBuffer.flip();
-                        byte[] chunkContent = new byte[byteBuffer.limit()];
+                        chunkContent = new byte[byteBuffer.limit()];
                         byteBuffer.get(chunkContent);
                         new Message(this.protocolVersion, MessageType.CHUNK, this.peerID, fileId, chunkNo, chunkContent).send(
                                 this.ipAddressMDR, this.portMDR

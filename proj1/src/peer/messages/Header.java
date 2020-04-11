@@ -24,53 +24,58 @@ public class Header implements Serializable {
 
     /**
      * Fills the Header class based on the elements of the header list, for message receiving
-     * @param header a list of elements received from a peer
+     * @param fullHeader the header received in a message
      */
-    public Header(String header) throws IllegalArgumentException {
-        ArrayList<String> headerLines = new ArrayList<>(Arrays.asList(header.split("\r\n")));
+    public Header(String fullHeader) throws IllegalArgumentException {
+        ArrayList<String> headerLines = new ArrayList<>(Arrays.asList(fullHeader.split("\r\n")));
 
-
-        // No point in processing the rest if we don't know any message with header size < 3
-        if(header.size() < 3) {
+        if(headerLines.size() < 1) {
             throw new IllegalArgumentException("Invalid message header received");
         }
 
-        this.version = header.remove(0);
-        this.messageType = MessageType.valueOf(header.remove(0));
-        this.senderId = Integer.parseInt(header.remove(0));
+        ArrayList<String> headerMain = new ArrayList<>(Arrays.asList(headerLines.remove(0).split(" ")));
+
+        // No point in processing the rest if we don't know any message with header size < 3
+        if(headerMain.size() < 3) {
+            throw new IllegalArgumentException("Invalid message header received");
+        }
+
+        this.version = headerMain.remove(0);
+        this.messageType = MessageType.valueOf(headerMain.remove(0));
+        this.senderId = Integer.parseInt(headerMain.remove(0));
 
         switch (this.messageType) {
             case GREETINGS:
                 this.fileId = "";
                 break;
+            case CHUNK:
+                if(this.version.equals("1.1")) {
+                    if(headerLines.size() < 1) {
+                        throw new IllegalArgumentException("Invalid message header received");
+                    }
+                    this.portNumber = Integer.parseInt(headerLines.get(0));
+                }
             case STORED: case GETCHUNK: case REMOVED:
-                this.fileId = header.remove(0);
-                if(header.size() != 1) {
+                this.fileId = headerMain.remove(0);
+                if(headerMain.size() != 1) {
                     throw new IllegalArgumentException("Invalid message header received");
                 }
-                this.chunkNo = Integer.parseInt(header.remove(0));
+                this.chunkNo = Integer.parseInt(headerMain.remove(0));
                 break;
             case PUTCHUNK:
-                this.fileId = header.remove(0);
-                if(header.size() != 2) {
+                this.fileId = headerMain.remove(0);
+                if(headerMain.size() != 2) {
                     throw new IllegalArgumentException("Invalid message header received");
                 }
-                this.chunkNo = Integer.parseInt(header.remove(0));
-                this.replicationDeg = Integer.parseInt(header.remove(0));
-                break;
-            case CHUNK:
-                this.fileId = header.remove(0);
-                if(header.size() != 1) {
-                    throw new IllegalArgumentException("Invalid message header received");
-                }
-                this.chunkNo = Integer.parseInt(header.remove(0));
+                this.chunkNo = Integer.parseInt(headerMain.remove(0));
+                this.replicationDeg = Integer.parseInt(headerMain.remove(0));
                 break;
             default:
-                this.fileId = header.remove(0);
+                this.fileId = headerMain.remove(0);
                 break;
         }
 
-        this.other = header;
+        this.other = headerMain;
     }
 
     /**
@@ -80,17 +85,22 @@ public class Header implements Serializable {
      * @param senderId the ID of the message sender
      * @param fileId the file identifier in the backup service, as the result of SHA256
      * @param chunkNo the chunk number of the specified file (may be unsued)
-     * @param repDeg the desired replication degree of the file's chunk (may be unused)
+     * @param repDeg_portNumber the desired replication degree of the file's chunk (may be unused) or the portNumber (only used in enhancements)
      */
-    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg) throws IllegalArgumentException {
-        if(msgType != MessageType.PUTCHUNK) {
+    public Header(String version, MessageType msgType, int senderId, String fileId, int chunkNo, int repDeg_portNumber) throws IllegalArgumentException {
+        if(msgType != MessageType.PUTCHUNK && msgType != MessageType.CHUNK) {
             throw new IllegalArgumentException("Invalid message header");
         }
         this.version = version;
         this.messageType = msgType;
         this.senderId = senderId;
         this.chunkNo = chunkNo;
-        this.replicationDeg = repDeg;
+
+        if(msgType == MessageType.PUTCHUNK) {
+            this.replicationDeg = repDeg_portNumber;
+        } else {
+            this.portNumber = repDeg_portNumber;
+        }
 
         this.fileId = fileId;
     }
@@ -202,6 +212,12 @@ public class Header implements Serializable {
         return replicationDeg;
     }
 
+    /**
+     * Retrieves the port Number
+     */
+    public int getPortNumber() {
+        return portNumber;
+    }
 
     /**
      * Retrieves the other fields of the header (if any).
@@ -225,9 +241,9 @@ public class Header implements Serializable {
             case PUTCHUNK:
                 header += " " + chunkNo + " " + replicationDeg;
                 break;
+            case CHUNK:
             case STORED:
             case GETCHUNK:
-            case CHUNK:
             case REMOVED:
                 header += " " + chunkNo;
                 break;
@@ -236,7 +252,12 @@ public class Header implements Serializable {
             case GREETINGS:
                 break;
         }
+
         header += " \r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed
+
+        if(messageType == MessageType.CHUNK && version.equals("1.1")){
+            header += this.portNumber + " \r\n";
+        }
         return header;
     }
 
