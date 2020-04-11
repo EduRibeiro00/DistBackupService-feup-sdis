@@ -513,9 +513,7 @@ public class Protocol1 extends Protocol {
                 }
                 mCastSkt.setSoTimeout((int) waitTime);
             }
-        } catch (IOException e) {
-            e.printStackTrace(); // TODO: change this
-        }
+        } catch (IOException ignore) { }
 
         try {
             future.get();
