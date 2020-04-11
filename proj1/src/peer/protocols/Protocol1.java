@@ -411,8 +411,6 @@ public class Protocol1 extends Protocol {
             }
         }
 
-        System.out.println(this.fileManager.getFileChunks(fileId).size() == 0 ? "Successfully deleted all chunks" : "Failed to delete all chunks");
-
         this.chunkManager.deleteDesiredReplication(fileId);
         this.fileManager.removeFile(fileId);
     }
