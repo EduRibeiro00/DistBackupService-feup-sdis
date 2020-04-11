@@ -344,21 +344,7 @@ public class Protocol2 extends Protocol1 {
     @Override
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
-
-        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
-            this.chunkManager.deletePerceivedReplication(fileId, i);
-
-            try {
-                this.fileManager.removeChunk(fileId, i);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        System.out.println(this.fileManager.getFileChunks(fileId).size() == 0 ? "Successfully deleted all chunks" : "Failed to delete all chunks");
-
-        this.chunkManager.deleteDesiredReplication(fileId);
-        this.fileManager.removeFile(fileId);
+        super.delete(message);
 
         Message msg = new Message(this.protocolVersion, MessageType.DELETED, this.peerID, fileId);
 
