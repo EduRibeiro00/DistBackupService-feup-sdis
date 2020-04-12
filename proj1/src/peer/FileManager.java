@@ -16,15 +16,20 @@ import java.nio.file.Paths;
 import java.util.concurrent.Future;
 
 /**
- * Class that manages the storage and lookup of local files
+ * Class that manages the storage and lookup of local files.
  */
 public class FileManager {
-    private final static String fileToChunksInfo = "file_to_chunks.data";
-    private final static String highestChunksInfo = "highest_chunks.data";
-    private final static String hashBackedUpFilesInfo = "hash_backed_up_files.data";
+    private final static String fileToChunksInfo = "file_to_chunks.data";                /** name of the file containing the file to chunks info */
+    private final static String highestChunksInfo = "highest_chunks.data";               /** name of the file containing the highest chunks info */
+    private final static String hashBackedUpFilesInfo = "hash_backed_up_files.data";     /** name of the file containing the hash of the backed up files */
+
+    private int availableStorageSpace;     /** Stores the available storage space, in KB */
+    private int maximumStorageSpace;       /** Stores the maximum available storage space, in KB */
+    private int peerId;                    /** The ID of the peer of which files are being managed */
+
 
     /**
-     * Stores the chunks of each file this peer has in his directory
+     * Stores the chunks of each file this peer has in his directory.
      * key = fileId
      * value = array with ChunkNo
      */
@@ -32,7 +37,7 @@ public class FileManager {
 
 
     /**
-     * Stores the size of each chunk it saves
+     * Stores the size of each chunk it saves.
      * key = fileID_chunkNo (identifier of the chunk)
      * value = the size of the chunk
      */
@@ -40,7 +45,7 @@ public class FileManager {
 
 
     /**
-     * Stores the highest chunk number of each file received and sent
+     * Stores the highest chunk number of each file received and sent.
      * key = fileId
      * value = highest chunk number perceived
      */
@@ -48,7 +53,7 @@ public class FileManager {
 
 
     /**
-     * Stores the generated FileID hashes for each of the backed up files
+     * Stores the generated FileID hashes for each of the backed up files.
      * key = file path
      * value = corresponding FileID
      */
@@ -56,25 +61,7 @@ public class FileManager {
 
 
     /**
-     * Stores the available storage space, in KB
-     */
-    private int availableStorageSpace;
-
-
-    /**
-     * Stores the maximum available storage space, in KB
-     */
-    private int maximumStorageSpace;
-
-
-    /**
-     * The ID of the peer of which files are being managed
-     */
-    private int peerId;
-
-
-    /**
-     * Constructor
+     * Constructor of the file manager.
      * @param peerId The ID of the peer of which files are going to be managed
      */
     public FileManager(int peerId) {
@@ -87,7 +74,7 @@ public class FileManager {
     }
 
     /**
-     * Return the maximum storage space
+     * Returns the maximum storage space.
      * @return an integer symbolizing the maximum available storage space in KB
      */
     public int getMaximumStorageSpace() {
@@ -97,7 +84,7 @@ public class FileManager {
     }
 
     /**
-     * Returns the available storage space
+     * Returns the available storage space.
      * @return an integer symbolizing the available storage space in KB
      */
     public int getAvailableStorageSpace() {
@@ -107,8 +94,8 @@ public class FileManager {
     }
 
     /**
-     * Sets the maximum storage space
-     * @param maximumStorageSpace The maximum storage space to be set
+     * Sets the maximum storage space.
+     * @param maximumStorageSpace the maximum storage space to be set
      */
     public void setMaximumStorageSpace(int maximumStorageSpace) {
         synchronized (this) {
@@ -122,7 +109,7 @@ public class FileManager {
     }
 
     /**
-     * Returns information of the backed up files
+     * Returns information of the backed up files.
      * @return a set of entries with that information
      */
     public Set<Map.Entry<String, ConcurrentSkipListSet<Integer>>> getFileToChunksEntries() {
@@ -131,7 +118,7 @@ public class FileManager {
 
 
     /**
-     * Returns information of the backed up files
+     * Returns information of the backed up files.
      * @return a set of entries with that information
      */
     public Set<Map.Entry<String, String>> getHashBackedUpFiles() {
@@ -140,7 +127,7 @@ public class FileManager {
 
 
     /**
-     * Creates a storage directory for the current peer
+     * Creates a storage directory for the current peer.
      * @return true if successful, false if otherwise
      */
     public boolean createDirectory(String dirName) {
@@ -154,7 +141,7 @@ public class FileManager {
     }
 
     /**
-     * Return the path to a given chunk in the storage directory
+     * Return the path to a given chunk in the storage directory.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @param chunkContent The chunk's content
@@ -193,7 +180,7 @@ public class FileManager {
     }
 
     /**
-     * Returns the content of a file's chunk
+     * Returns the content of a file's chunk.
      * @param buf Byte buffer that will have the chunk content
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
@@ -208,14 +195,18 @@ public class FileManager {
     }
 
 
-
+    /**
+     * Checks if the current peer is the owner of a specific file, that is, if it ordered its backup.
+     * @param fileId file identifier
+     * @return true is the peer is the file owner, false otherwise
+     */
     public boolean amFileOwner(String fileId) {
         return this.hashBackedUpFiles.search(1, (key, value) -> value.equals(fileId) ? key : null) != null;
     }
 
 
     /**
-     * Inserts hash for file
+     * Inserts hash for file.
      * @param filepath The file path
      * @param modificationDate The modification date of the file
      * @return The generated file ID
@@ -228,7 +219,7 @@ public class FileManager {
     }
 
     /**
-     * Get an already computed fileID for a filepath
+     * Get an already computed fileID for a filepath.
      * @param filepath The file path
      * @return The correspondent file ID for the file path
      */
@@ -237,7 +228,7 @@ public class FileManager {
     }
 
     /**
-     * Deletes hash for a given file
+     * Deletes hash for a given file.
      * @param filepath The file path
      */
     public void deleteHashForFile(String filepath) {
@@ -246,7 +237,7 @@ public class FileManager {
     }
 
     /**
-     * Deletes the filepath of a given fileId
+     * Deletes the filepath of a given fileId.
      * @param fileId The file hash
      */
     public void deleteFileForHash(String fileId) {
@@ -259,7 +250,7 @@ public class FileManager {
     }
 
     /**
-     * Returns the path to the peer's storage directory
+     * Returns the path to the peer's storage directory.
      * @return A string containing the path
      */
     public String getDirectoryPath(String dirName) {
@@ -267,7 +258,7 @@ public class FileManager {
     }
 
     /**
-     * Return the path to a given chunk in the storage directory
+     * Return the path to a given chunk in the storage directory.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @return A string containing the path
@@ -278,7 +269,7 @@ public class FileManager {
     }
 
     /**
-     * Sets the maximum chunk number for a file
+     * Sets the maximum chunk number for a file.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      */
@@ -288,7 +279,7 @@ public class FileManager {
     }
 
     /**
-     * Returns the maximum chunk number for a file
+     * Returns the maximum chunk number for a file.
      * @param fileId The ID of the file
      * @return The number of the chunk
      */
@@ -297,10 +288,10 @@ public class FileManager {
     }
 
     /**
-     *
-     * @param fileId
-     * @param chunkNo
-     * @return
+     * Get the size of a specific chunk of a specific file
+     * @param fileId file identifier
+     * @param chunkNo chunk number
+     * @return the size of the chunk; -1 if the chunk does not exist
      */
     public int getChunkSize(String fileId, int chunkNo) {
         return this.chunkSizes.getOrDefault(fileId + "_" + chunkNo, -1);
@@ -308,7 +299,7 @@ public class FileManager {
 
 
     /**
-     * Deletes the maximum chunk number for a file
+     * Deletes the maximum chunk number for a file.
      * @param fileId The ID of the file
      */
     public void deleteMaxChunkNo(String fileId) {
@@ -317,7 +308,7 @@ public class FileManager {
     }
 
     /**
-     * Returns a list with the chunks of a file
+     * Returns a list with the chunks of a file.
      * @param fileId The ID of the file
      * @return A list with the chunks of the file
      */
@@ -326,7 +317,7 @@ public class FileManager {
     }
 
     /**
-     * Removes a chunk from a file
+     * Removes a chunk from a file.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @return true if successful, false if otherwise
@@ -359,7 +350,7 @@ public class FileManager {
     }
 
     /**
-     * Removes a file from the hash tables
+     * Removes a file from the hash tables.
      * @param fileId The ID of the file
      */
     public void removeFile(String fileId) {
@@ -372,8 +363,7 @@ public class FileManager {
 
 
     /**
-     * Function that creates a restored file with the contents of the file
-     * restorer passed as argument
+     * Function that creates a restored file with the contents of the file restorer passed as argument.
      * @param fileRestorer File restorer with the information/chunks of the file to be restored
      */
     public void restoreFileFromChunks(FileRestorer fileRestorer) {
@@ -414,7 +404,7 @@ public class FileManager {
 
 
     /**
-     * Adds information that a chunk of a file was stored
+     * Adds information that a chunk of a file was stored.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      */
@@ -426,7 +416,7 @@ public class FileManager {
     }
 
     /**
-     * Removes information that a chunk of a file was stored
+     * Removes information that a chunk of a file was stored.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @return
@@ -437,7 +427,7 @@ public class FileManager {
     }
 
     /**
-     * Checks if a file's chunk is stored
+     * Checks if a file's chunk is stored.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
      * @return true if it's stored, false if otherwise
@@ -448,7 +438,7 @@ public class FileManager {
     }
 
     /**
-     * Fills the tables with the information present in the directory that was passed to the constructor
+     * Fills the tables with the information present in the directory that was passed to the constructor.
      */
     private void loadFromDirectory() {
 
@@ -502,7 +492,7 @@ public class FileManager {
     }
 
     /**
-     * Writes to files in the directory to save the information present on the tables
+     * Writes to files in the directory to save the information present on the tables.
      */
     synchronized private void saveToDirectory() {
 

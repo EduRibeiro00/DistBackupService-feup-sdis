@@ -185,7 +185,8 @@ public class Protocol2 extends Protocol1 {
                 future = this.fileManager.getChunk(byteBuffer, fileId, chunkNo);
 
             } catch (IOException e) {
-                e.printStackTrace(); // TODO: change this
+                System.err.println("Error getting the chunk");
+                e.printStackTrace();
                 return;
             }
 
@@ -198,7 +199,8 @@ public class Protocol2 extends Protocol1 {
                 mCastSkt.setTimeToLive(1);
                 mCastSkt.setSoTimeout((int) waitTime);
             } catch (IOException e) {
-                e.printStackTrace(); // TODO: change this
+                System.err.println("Error creating the socket");
+                e.printStackTrace();
                 return;
             }
 
@@ -225,7 +227,7 @@ public class Protocol2 extends Protocol1 {
 
             // send message with chunk
             switch (header.getVersion()) {
-                case "1.1": //TODO: compor try/catch
+                case "1.1":
                     ServerSocket serverSocket;
                     Socket chunkSocket;
                     BufferedInputStream in;

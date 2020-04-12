@@ -19,20 +19,19 @@ import java.util.concurrent.Executors;
 
 
 /**
- * Class that makes the connection between the peer and the testing client
+ * Class that makes the connection between the peer and the testing client.
  */
 public class Peer implements RemoteInterface {
-    private final static int N_THREADS_PER_CHANNEL = 10;    // number of threads ready for processing packets in each channel
-    private final static int BUFFER_SIZE_CONTROL = 2000;     // buffer size for messages received in the control socket
-    private final static int BUFFER_SIZE = 64500;           // buffer size for messages received in the control socket
-    public static final int CHUNK_SIZE = 64000;
+    private final static int N_THREADS_PER_CHANNEL = 10;    /** number of threads ready for processing packets in each channel */
+    private final static int BUFFER_SIZE_CONTROL = 2000;    /** buffer size for messages received in the control socket */
+    private final static int BUFFER_SIZE = 64500;           /** buffer size for messages received in the control socket */
+    public static final int CHUNK_SIZE = 64000;             /** chunk size constant */
 
-
-    private Protocol protocol;  // protocol responsible for the peer behaviours
-    private ExecutorService service; // ExecutorService responsible for threads
+    private Protocol protocol;           /** protocol responsible for the peer behaviours */
+    private ExecutorService service;     /** ExecutorService responsible for threads */
 
     /**
-     * Constructor of the peer
+     * Constructor of the peer.
      * @param ipAddressMC IP Address of the MC channel
      * @param portMC Port of the MC channel
      * @param ipAddressMDB IP Address of the MDB channel

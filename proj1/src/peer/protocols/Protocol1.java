@@ -270,7 +270,8 @@ public class Protocol1 extends Protocol {
                 mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDR));
                 mCastSkt.setTimeToLive(1);
             } catch (IOException e) {
-                e.printStackTrace(); // TODO: change this
+                System.err.println("Error getting the chunk or creating the socket");
+                e.printStackTrace();
                 return;
             }
 
@@ -278,7 +279,8 @@ public class Protocol1 extends Protocol {
             try {
                 mCastSkt.setSoTimeout((int) waitTime);
             } catch (SocketException e) {
-                e.printStackTrace(); // TODO: change this
+                System.err.println("Error setting the socket timeout");
+                e.printStackTrace();
                 return;
             }
 
@@ -485,7 +487,8 @@ public class Protocol1 extends Protocol {
             mCastSkt.joinGroup(InetAddress.getByName(this.ipAddressMDB));
             mCastSkt.setTimeToLive(1);
         } catch (IOException e) {
-            e.printStackTrace(); // TODO: change this
+            System.err.println("Error getting the chunk or creating the socket");
+            e.printStackTrace();
             return;
         }
 
@@ -493,7 +496,8 @@ public class Protocol1 extends Protocol {
         try {
             mCastSkt.setSoTimeout((int) waitTime);
         } catch (SocketException e) {
-            e.printStackTrace(); // TODO: change this
+            System.err.println("Error setting the socket timeout");
+            e.printStackTrace();
             return;
         }
 
