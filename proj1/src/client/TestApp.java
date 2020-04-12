@@ -22,6 +22,10 @@ import java.rmi.registry.Registry;
 // java peer.PeerLauncher 1.0 3333 3333 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
 // java peer.PeerLauncher 1.1 3333 3333 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
 
+// java peer.PeerLauncher 1.0 4444 4444 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.1 4444 4444 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+
+
 /**
  * Class that represents the client that can communicate with a peer and test its services
  */
