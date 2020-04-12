@@ -7,17 +7,25 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 // find . -name "*.java" -print | xargs javac
-// java client.TestApp 1234 STATE
-// java client.TestApp 1234 BACKUP peer/files/pony.jpg 1
-// java client.TestApp 1234 DELETE peer/files/pony.jpg
-// java client.TestApp 1234 RESTORE peer/files/pony.jpg
-// java client.TestApp 5678 RECLAIM 0
+// java client.TestApp 1111 STATE
+// java client.TestApp 1111 BACKUP peer/files/pony.jpg 1
+// java client.TestApp 1111 DELETE peer/files/pony.jpg
+// java client.TestApp 1111 RESTORE peer/files/pony.jpg
+// java client.TestApp 2222 RECLAIM 0
 
-// java peer.PeerLauncher 1.0 1234 1234 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
-// java peer.PeerLauncher 1.1 1234 1234 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.0 1111 1111 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.1 1111 1111 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
 
-// java peer.PeerLauncher 1.0 5678 5678 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
-// java peer.PeerLauncher 1.1 5678 5678 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.0 2222 2222 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.1 2222 2222 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+
+// java peer.PeerLauncher 1.0 3333 3333 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.1 3333 3333 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+
+// java peer.PeerLauncher 1.0 4444 4444 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+// java peer.PeerLauncher 1.1 4444 4444 225.0.0.1 8080 225.0.0.1 8081 225.0.0.1 8082
+
+// java peer.PeerLauncher
 
 
 /**
