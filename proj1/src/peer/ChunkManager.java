@@ -224,8 +224,11 @@ public class ChunkManager {
     }
 
     /**
-     *
-     * @return
+     * Returns the file storers for the arguments passed.
+     * @param fileId file identifier
+     * @param highestChunkNo highest chunk number
+     * @param peerId peer identifier
+     * @return array with the ids of the file storers
      */
     public ArrayList<Integer> getFileStorers(String fileId, int highestChunkNo, int peerId) {
         ArrayList<Integer> holders = new ArrayList<>();
@@ -245,18 +248,22 @@ public class ChunkManager {
 
 
     /**
-     *
-     * @param peerId
-     * @param msg
-     * @param ipAddress
-     * @param port
+     * Adds a message to the file deleter associated with a peer.
+     * @param peerId peer identifier
+     * @param msg message to be added (and later sent to the peer)
+     * @param ipAddress IP address for sending the message
+     * @param port port for sending the message
      */
     public void addToFileDeleter(Integer peerId, Message msg, String ipAddress, int port) {
         fileDeletionList.computeIfAbsent(peerId, key -> new FileDeleter(ipAddress, port)).addMessage(msg);
         this.saveToDirectory();
     }
 
-
+    /**
+     * Remove messages from a file deleter, for a specific file.
+     * @param peerId peer identifier
+     * @param fileId file identifier
+     */
     public void removeFromFileDeleter(Integer peerId, String fileId) {
         if (this.getFileDeleter(peerId).removeMessages(fileId) ) {
             this.fileDeletionList.remove(peerId);
@@ -265,15 +272,17 @@ public class ChunkManager {
     }
 
     /**
-     *
-     * @return
+     * Retrieves the file deleter associated with a peer. If there is none, returns an empty file deleter.
+     * @param peerId peer identifier
+     * @return the file deleter
      */
     public FileDeleter getFileDeleter(Integer peerId) {
         return fileDeletionList.getOrDefault(peerId, new FileDeleter());
     }
 
     /**
-     *
+     * Remove all file deleters for a specific file.
+     * @param fileId file identifier
      */
     public void removeFileDeletion(String fileId) {
         Set<Map.Entry<Integer, FileDeleter>> entrySet = this.fileDeletionList.entrySet();
@@ -285,7 +294,7 @@ public class ChunkManager {
 
 
     /**
-     * Fills the tables with the information present in the directory that was passed to the constructor
+     * Fills the tables with the information present in the directory that was passed to the constructor.
      */
     private void loadFromDirectory() {
         // Creating an empty file restoring table
@@ -327,7 +336,7 @@ public class ChunkManager {
     }
 
     /**
-     * Writes to files in the directory to save the information present on the tables
+     * Writes to files in the directory to save the information present on the tables.
      */
     synchronized private void saveToDirectory() {
 

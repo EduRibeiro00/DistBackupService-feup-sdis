@@ -9,12 +9,24 @@ import java.net.MulticastSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Class that represents a thread that is always receiving and processing messages, for a specific multicast channel.
+ */
 public class ReceiverThread implements Runnable {
-    private MessageHandler messageHandler;      // messageHandler that will process receiving data
-    private MulticastSocket mCastSkt;           // multicast socket to receive data
-    private int bufSize;                        // buffer size
-    private ExecutorService service;            // ExecutorService responsible for threads
+    private MessageHandler messageHandler;      /** messageHandler that will process receiving data */
+    private MulticastSocket mCastSkt;           /** multicast socket to receive data */
+    private int bufSize;                        /** buffer size */
+    private ExecutorService service;            /** ExecutorService responsible for threads */
 
+    /**
+     * Constructor of the receiver thread.
+     * @param messageHandler message handler for processing messages
+     * @param ipAddress IP address for the multicast socket
+     * @param port port for the multicast socket
+     * @param bufSize buffer size
+     * @param nThreads number of threads for the executor service
+     * @throws IOException
+     */
     public ReceiverThread(MessageHandler messageHandler, String ipAddress, int port, int bufSize, int nThreads) throws IOException {
         this.messageHandler = messageHandler;
 
@@ -26,6 +38,9 @@ public class ReceiverThread implements Runnable {
         this.service = Executors.newFixedThreadPool(nThreads);
     }
 
+    /**
+     * Override of the thread run method. Is always receiving new messages and dispatching them using the thread pool.
+     */
     @Override
     public void run() {
         System.out.println("Thread ready for receiving packets");
@@ -46,8 +61,8 @@ public class ReceiverThread implements Runnable {
     }
 
     /**
-     * Sends the packet content to the peer for processing
-     * @param packet
+     * Sends the packet content to the peer for processing.
+     * @param packet the packet received for processing
      */
     private void handleMessage(DatagramPacket packet) {
 
