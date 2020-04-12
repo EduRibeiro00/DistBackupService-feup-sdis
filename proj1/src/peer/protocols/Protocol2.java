@@ -79,19 +79,16 @@ public class Protocol2 extends Protocol1 {
                 }
 
                 if (this.fileManager.isChunkStored(header.getFileId(), header.getChunkNo())) {
-                    executor.schedule(() -> {
-                        try {
-                            new Message(this.protocolVersion,
-                                    MessageType.STORED,
-                                    this.peerID,
-                                    header.getFileId(),
-                                    header.getChunkNo()
-                            ).send(this.ipAddressMC, this.portMC);
-                        } catch (IOException e) {
-                            System.err.println("Failed to send STORED message");
-                        }
-                    }, new Random().nextInt(401), TimeUnit.MILLISECONDS);
-
+                    try {
+                        new Message(this.protocolVersion,
+                                MessageType.STORED,
+                                this.peerID,
+                                header.getFileId(),
+                                header.getChunkNo()
+                        ).send(this.ipAddressMC, this.portMC);
+                    } catch (IOException e) {
+                        System.err.println("Failed to send STORED message");
+                    }
                 }
             } catch (IOException e) {
                 System.err.println("Failed to store chunk " + header.getChunkNo() + " of file: " + header.getFileId());;
