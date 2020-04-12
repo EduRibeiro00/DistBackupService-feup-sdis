@@ -33,16 +33,16 @@ public class Header implements Serializable {
             throw new IllegalArgumentException("Invalid message header received");
         }
 
-        ArrayList<String> headerMain = new ArrayList<>(Arrays.asList(headerLines.remove(0).split(" ")));
+        ArrayList<String> headerMain = new ArrayList<>(Arrays.asList(headerLines.remove(0).split("\\s+")));
 
         // No point in processing the rest if we don't know any message with header size < 3
         if(headerMain.size() < 3) {
             throw new IllegalArgumentException("Invalid message header received");
         }
 
-        this.version = headerMain.remove(0);
-        this.messageType = MessageType.valueOf(headerMain.remove(0));
-        this.senderId = Integer.parseInt(headerMain.remove(0));
+        this.version = headerMain.remove(0).trim();
+        this.messageType = MessageType.valueOf(headerMain.remove(0).trim());
+        this.senderId = Integer.parseInt(headerMain.remove(0).trim());
 
         switch (this.messageType) {
             case GREETINGS:
@@ -56,22 +56,22 @@ public class Header implements Serializable {
                     this.portNumber = Integer.parseInt(headerLines.get(0).trim());
                 }
             case STORED: case GETCHUNK: case REMOVED:
-                this.fileId = headerMain.remove(0);
+                this.fileId = headerMain.remove(0).trim();
                 if(headerMain.size() != 1) {
                     throw new IllegalArgumentException("Invalid message header received");
                 }
-                this.chunkNo = Integer.parseInt(headerMain.remove(0));
+                this.chunkNo = Integer.parseInt(headerMain.remove(0).trim());
                 break;
             case PUTCHUNK:
-                this.fileId = headerMain.remove(0);
+                this.fileId = headerMain.remove(0).trim();
                 if(headerMain.size() != 2) {
                     throw new IllegalArgumentException("Invalid message header received");
                 }
-                this.chunkNo = Integer.parseInt(headerMain.remove(0));
-                this.replicationDeg = Integer.parseInt(headerMain.remove(0));
+                this.chunkNo = Integer.parseInt(headerMain.remove(0).trim());
+                this.replicationDeg = Integer.parseInt(headerMain.remove(0).trim());
                 break;
             default:
-                this.fileId = headerMain.remove(0);
+                this.fileId = headerMain.remove(0).trim();
                 break;
         }
 
@@ -253,7 +253,7 @@ public class Header implements Serializable {
                 break;
         }
 
-        header += " \r\n"; // Warning - In case we decided to use "multiple headers inside of the same header" the last <CRLF> needs to be removed
+        header += " \r\n";
 
         if(messageType == MessageType.CHUNK && version.equals("1.1")){
             header += this.portNumber + " \r\n";

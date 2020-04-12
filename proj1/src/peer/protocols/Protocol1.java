@@ -151,6 +151,10 @@ public class Protocol1 extends Protocol {
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
         this.fileManager.setMaxChunkNo(header.getFileId(), header.getChunkNo());
 
+        if(this.fileManager.amFileOwner(header.getFileId())) {
+            return;
+        }
+
         try {
             if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
                 return;
@@ -407,8 +411,6 @@ public class Protocol1 extends Protocol {
             }
         }
 
-        System.out.println(this.fileManager.getFileChunks(fileId).size() == 0 ? "Successfully deleted all chunks" : "Failed to delete all chunks");
-
         this.chunkManager.deleteDesiredReplication(fileId);
         this.fileManager.removeFile(fileId);
     }
@@ -511,9 +513,7 @@ public class Protocol1 extends Protocol {
                 }
                 mCastSkt.setSoTimeout((int) waitTime);
             }
-        } catch (IOException e) {
-            e.printStackTrace(); // TODO: change this
-        }
+        } catch (IOException ignore) { }
 
         try {
             future.get();

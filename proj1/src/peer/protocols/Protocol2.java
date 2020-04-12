@@ -62,19 +62,23 @@ public class Protocol2 extends Protocol1 {
         this.chunkManager.setDesiredReplication(header.getFileId(), header.getReplicationDeg());
         this.fileManager.setMaxChunkNo(header.getFileId(), header.getChunkNo());
 
-        try {
-            if(this.chunkManager.getPerceivedReplication(header.getFileId(), header.getChunkNo()) <
-                    this.chunkManager.getDesiredReplication(header.getFileId())) {
+        if(this.fileManager.amFileOwner(header.getFileId())) {
+            return;
+        }
 
-                if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
-                    return;
+        executor.schedule(() -> {
+            try {
+                if(this.chunkManager.getPerceivedReplication(header.getFileId(), header.getChunkNo()) <
+                        this.chunkManager.getDesiredReplication(header.getFileId())) {
+
+                    if (!this.fileManager.storeChunk(header.getFileId(), header.getChunkNo(), message.getBody())) {
+                        return;
+                    }
+
+                    this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
                 }
 
-                this.chunkManager.addChunkReplication(header.getFileId(), header.getChunkNo(), this.peerID);
-            }
-
-            if (this.fileManager.isChunkStored(header.getFileId(), header.getChunkNo())) {
-                executor.schedule(() -> {
+                if (this.fileManager.isChunkStored(header.getFileId(), header.getChunkNo())) {
                     try {
                         new Message(this.protocolVersion,
                                 MessageType.STORED,
@@ -83,15 +87,13 @@ public class Protocol2 extends Protocol1 {
                                 header.getChunkNo()
                         ).send(this.ipAddressMC, this.portMC);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.err.println("Failed to send STORED message");
                     }
-                }, new Random().nextInt(401), TimeUnit.MILLISECONDS);
-
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to store chunk " + header.getChunkNo() + " of file: " + header.getFileId());;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        }, new Random().nextInt(601), TimeUnit.MILLISECONDS);
     }
 
 
@@ -339,21 +341,7 @@ public class Protocol2 extends Protocol1 {
     @Override
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
-
-        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
-            this.chunkManager.deletePerceivedReplication(fileId, i);
-
-            try {
-                this.fileManager.removeChunk(fileId, i);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        System.out.println(this.fileManager.getFileChunks(fileId).size() == 0 ? "Successfully deleted all chunks" : "Failed to delete all chunks");
-
-        this.chunkManager.deleteDesiredReplication(fileId);
-        this.fileManager.removeFile(fileId);
+        super.delete(message);
 
         Message msg = new Message(this.protocolVersion, MessageType.DELETED, this.peerID, fileId);
 
