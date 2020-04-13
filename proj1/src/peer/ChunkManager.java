@@ -42,7 +42,7 @@ public class ChunkManager {
      * key = peer id
      * value = object that contains information/data about the files/chunks to be deleted
      */
-    ConcurrentHashMap<Integer, FileDeleter> fileDeletionList;
+    private ConcurrentHashMap<Integer, FileDeleter> fileDeletionList;
 
 
     /**

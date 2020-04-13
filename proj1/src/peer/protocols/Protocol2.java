@@ -343,19 +343,37 @@ public class Protocol2 extends Protocol1 {
     @Override
     public void delete(Message message) {
         String fileId = message.getHeader().getFileId();
-        super.delete(message);
+        boolean deleted = false;
 
-        Message msg = new Message(this.protocolVersion, MessageType.DELETED, this.peerID, fileId);
+        for (int i = 0; i <= this.fileManager.getMaxChunkNo(fileId); i++) {
+            this.chunkManager.deletePerceivedReplication(fileId, i);
 
-        executor.schedule(() -> {
-                    try {
-                        msg.send(this.ipAddressMC, this.portMC);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                },
-                new Random().nextInt(401),
-                TimeUnit.MILLISECONDS);
+            try {
+                if(this.fileManager.removeChunk(fileId, i)) {
+                    deleted = true;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        this.chunkManager.deleteDesiredReplication(fileId);
+        this.fileManager.removeFile(fileId);
+
+        // if it had at least one chunk and it deleted it, send DELETED message
+        if (deleted) {
+            Message msg = new Message(this.protocolVersion, MessageType.DELETED, this.peerID, fileId);
+
+            executor.schedule(() -> {
+                        try {
+                            msg.send(this.ipAddressMC, this.portMC);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    },
+                    new Random().nextInt(401),
+                    TimeUnit.MILLISECONDS);
+        }
     }
 
 
