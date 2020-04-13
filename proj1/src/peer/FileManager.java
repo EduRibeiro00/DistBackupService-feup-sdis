@@ -332,7 +332,6 @@ public class FileManager {
         Files.deleteIfExists(Paths.get(chunkPath));
 
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.get(fileId);
-        chunks.removeIf(elem -> elem.equals(chunkNo));
 
         if (chunks.size() == 0) {
             this.fileToChunks.remove(fileId);
@@ -419,7 +418,7 @@ public class FileManager {
      * Removes information that a chunk of a file was stored.
      * @param fileId The ID of the file
      * @param chunkNo The number of the chunk
-     * @return
+     * @return true if any elements were removed
      */
     private boolean removeChunkStored(String fileId, int chunkNo) {
         ConcurrentSkipListSet<Integer> chunks = this.fileToChunks.getOrDefault(fileId, new ConcurrentSkipListSet<>());
