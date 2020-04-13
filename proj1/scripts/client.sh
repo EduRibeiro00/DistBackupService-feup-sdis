@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function usage {
-  echo "sh scripts/client.sh <peer_ap> <sub_protocol> [<opnd_1> [<opnd_2]]"
+  echo "bash scripts/client.sh <peer_ap> <sub_protocol> [<opnd_1> [<opnd_2]]"
   echo "<sub_protocol>: BACKUP / RESTORE / DELETE / RECLAIM / STATE"
 }
 
@@ -60,6 +60,6 @@ if [ "$2" = "RECLAIM" ]; then
   fi
 fi
 
-# execute client in another terminal
+# execute client in current terminal session
 cd bin && java client.TestApp $1 $2 $3 $4
 wait
