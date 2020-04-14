@@ -32,4 +32,6 @@ Using the client app:
             STATE
 
 
+The Java SE version that was used was Java 11.0.3.
+
 

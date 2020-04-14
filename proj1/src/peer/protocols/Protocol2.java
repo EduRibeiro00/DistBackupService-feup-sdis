@@ -332,7 +332,7 @@ public class Protocol2 extends Protocol1 {
             this.chunkManager.addToFileDeleter(storer, msg, this.ipAddressMC, this.portMC);
         }
 
-        sendDeleteMsgLoop(msg, 0, filepath, fileId);
+        sendDeleteMsgLoop(msg, 0, fileId);
     }
 
 

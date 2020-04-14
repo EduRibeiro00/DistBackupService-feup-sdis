@@ -357,7 +357,7 @@ public class Protocol1 extends Protocol {
 
         Message msg = new Message(this.protocolVersion, MessageType.DELETE, this.peerID, fileId);
 
-        sendDeleteMsgLoop(msg, 0, filepath, fileId);
+        sendDeleteMsgLoop(msg, 0, fileId);
     }
 
 
@@ -365,10 +365,9 @@ public class Protocol1 extends Protocol {
      * Method that sends the needed DELETE messages to the peers, and updates data structures at the end.
      * @param msg message to be sent (DELETE)
      * @param iteration iteration number
-     * @param filepath path of the file
      * @param fileId file identifier
      */
-    protected void sendDeleteMsgLoop(Message msg, int iteration, String filepath, String fileId) {
+    protected void sendDeleteMsgLoop(Message msg, int iteration, String fileId) {
         try {
             msg.send(this.ipAddressMC, this.portMC);
         } catch (IOException e) {
@@ -376,7 +375,7 @@ public class Protocol1 extends Protocol {
         }
 
         if (iteration < 4) {
-            executor.schedule(() -> sendDeleteMsgLoop(msg, iteration + 1, filepath, fileId),
+            executor.schedule(() -> sendDeleteMsgLoop(msg, iteration + 1, fileId),
                     this.TIMEOUT >> 1,
                     TimeUnit.MILLISECONDS);
         }
@@ -390,7 +389,7 @@ public class Protocol1 extends Protocol {
 
             this.chunkManager.deleteDesiredReplication(fileId);
             this.fileManager.deleteMaxChunkNo(fileId);
-            this.fileManager.deleteHashForFile(filepath);
+            this.fileManager.deleteFileForHash(fileId);
         }
     }
 
