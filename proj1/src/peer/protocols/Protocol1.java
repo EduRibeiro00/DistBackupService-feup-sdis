@@ -137,6 +137,18 @@ public class Protocol1 extends Protocol {
                         (long) (Math.pow(2, iteration)),
                         TimeUnit.SECONDS);
         }
+        else {
+            // if the peer is not the file owner, it means that this backup operation was originated
+            // from a restore protocol. If that is the case, it means that the peer has the chunk backed up.
+            if (!this.fileManager.amFileOwner(fileId)) {
+                try {
+                    new Message(this.protocolVersion, MessageType.STORED, this.peerID, fileId, chunkNo).send(this.ipAddressMC, this.portMC);
+                } catch (IOException e) {
+                    System.err.println("Error sending stored message");
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 
