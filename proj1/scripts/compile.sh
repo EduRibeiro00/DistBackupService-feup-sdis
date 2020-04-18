@@ -1,13 +1,13 @@
-#!/bin/bash
+#! /usr/bin/bash
 
-rm -rf bin
-mkdir -p bin
+# Compilation script
+# To be executed in the root of the package (source code) hierarchy
+# Compiled code is placed under ./build/
 
-echo "Compiling service..."
-echo
-javac $(find src | grep .java) -d bin 2> /dev/null &
+rm -rf build
+mkdir -p build
 
-mkdir -p bin/peer/chunks
-mkdir -p bin/peer/files
+javac $(find . | grep .java) -d build 2> /dev/null &
 
-echo "Compiled successfuly"
+mkdir -p build/peer/chunks
+mkdir -p build/peer/files
