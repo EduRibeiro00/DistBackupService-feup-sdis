@@ -1,9 +1,12 @@
 package client;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.Arrays;
 
 /**
  * Client class
@@ -33,9 +36,21 @@ public class Client {
         port = Integer.parseInt(args[1]);
         String oper = args[2];
         String dnsName = args[3];
+        String[] cypherSuites;
+
+        if(oper.equals("lookup")){
+            cypherSuites = Arrays.copyOfRange(args, 4, args.length);
+        } else if (oper.equals("register")){
+            cypherSuites = Arrays.copyOfRange(args, 5, args.length);
+        } else {
+            System.err.println("Invalid arguments passed");
+            return;
+        }
+
 
         // open socket
-        Socket socket = new Socket(host, port);
+        SSLSocket socket = (SSLSocket) SSLSocketFactory.getDefault().createSocket(host, port);
+        socket.setEnabledCipherSuites(cypherSuites);
 
         // open streams
         out = new PrintWriter(socket.getOutputStream(), true);

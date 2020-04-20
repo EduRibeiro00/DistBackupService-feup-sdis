@@ -1,9 +1,13 @@
 package server;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 /**
@@ -12,7 +16,9 @@ import java.util.HashMap;
 public class Server {
     private static HashMap<String,String> addressTable; // dns table with pairs <name, ip_address>
     private static int port; // port number
-    private static ServerSocket serverSocket; // serverSocket that will be used for communication (TCP!)
+    private static SSLServerSocket serverSocket; // serverSocket that will be used for communication (TCP!)
+
+//    Keys stored with password 123456
 
     /**
      * Main method
@@ -25,6 +31,7 @@ public class Server {
             System.exit(1);
         }
 
+        String[] cypherSuites = Arrays.copyOfRange(args, 1, args.length);
         // open port
         try {
             port = Integer.parseInt(args[0]);
@@ -36,7 +43,10 @@ public class Server {
 
         // create serverSocket
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = (SSLServerSocket) SSLServerSocketFactory.getDefault().createServerSocket(port);
+            serverSocket.setNeedClientAuth(true);
+            serverSocket.setEnabledProtocols(serverSocket.getSupportedProtocols());
+            serverSocket.setEnabledCipherSuites(cypherSuites);
         }
         catch (IOException e) {
             System.out.println("Could not open datagram serverSocket");
