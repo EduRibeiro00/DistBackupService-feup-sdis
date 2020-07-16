@@ -1,0 +1,78 @@
+1-
+1.1-
+Falso.
+Certas aplicações multimédia, que não sejam em tempo real (ou seja, em que o conteúdo já se encontra gerado), se possuírem buffers suficientemente grandes para não ter muito delay, podem (e devem) usar TCP, pois como foi dito o delay dos packets introduzido pelas funcionalidades do TCP não afeta a experiência do utilizador, e erros de perda de pacotes ou duplicação, ou flow control já é tratado ao nível do TCP. Porém, para aplicações em tempo real, em que o conteúdo é gerado à medida que é transimitido (não têm nada para dar buffer!) ou para aplicações que não possuem buffers suficientemente grandes, o delay dos pacotes introduzido pelo TCP pode ser prejudicial, sendo a perda de pacotes um acontecimento mais tolerável por parte da aplicação, e por causa disso deveriam utilizar UDP.
+
+
+1.2-
+Verdadeiro.
+Os algoritmos epidémicos de difusão funcionam da seguinte maneira: cada nó escolhe outro nó para contactar e para trocar mensagens, sendo que diversas variações e implementações são possíveis. Mas essencialmente assentam no princípio que, à medida que o tempo passa, mais e mais nós irão ter as informação desejada, como se de um vírus se tratasse. De modo a adaptar estes algoritmos de broadcast (todos os nós) para multicast (grupo específico de nós), cada nó deve contactar apenas nós contidos dentro desse grupo específico de nós.
+
+1.3-
+Falso.
+Uma semântica de at-most-once pode funcionar bem quando as operações não são idempotentes, pois não há o risco de fazer a mesma operação duas vezes caso aconteça um erro, como o servidor crashar ou uma mensagem ser perdida. Para operações idempotentes, não há problema em utilizar a semântica at-least-once já que, como cada operação pode ser feita várias vezes, dando o mesmo resultado e originando as mesmas consequências, se ocorrer um erro o cliente pode pedir de novo a operação para ser feita. Porém, nada indica que, para operações idempotentes, a semântica at-most-once não possa ser usada.
+
+1.4-
+Falso.
+A concorrência pode ser alcançada principalmente de duas maneiras: utilizando uma abordagem baseada em threads, ou uma abordagem baseada em eventos. Nesta última, cada request que o servidor está a processar tem uma máquina de estados. Várias requests estão a ser processadas ao mesmo tempo, sendo possível utilizar apenas uma thread.
+
+1.5-
+Falso.
+As cookies servem para manter o estado no servidor, já que o protocolo utilizado (HTTP é stateless). Podem ser utilizadas para manter o estado de um cliente e deste modo podem ser utilizadas para operações como shopping cart, em que é necessária a progressão e o estado atual do utilizador e das suas operações.
+
+1.6-
+Falso.
+Leases são mecanismos que permitem a um dado cliente ter dados/informação alocados no servidor, durante um período de tempo, no fim do qual esses dados são apagados. De modo a manter a informação no servidor, o cliente terá de, quando/antes de o período de tempo acabar, pedir ao servidor para "renovar" a lease. Para leases com tempo de expiração relativos, embora o tempo não esteja sincronizado com o tempo real nem com nenhuma fonte externa, o tempo entre os vários elementos do sistema (clientes e servidores, etc) não pode divergir infinitamente, terá de ter uma certa precisão. Portanto seria necessário um sistema síncrono (com pelo menos sincronização interna de relógios), sendo impossível ser isto feito num sistema assíncrono, que nada impõe relativamente aos relógios de cada elementos do sistema.
+
+1.7-
+Falso.
+As Lamport timestamps de um evento são atualizadas da seguinte maneira (atualização antes de dar o timestamp ao evento): se o evento não é a receção de uma mensagem, então incrementar o clock por 1, senão incrementar por 1 o máximo entre o valor atual do clock e a timestamp da mensagem recebida. Imaginemos que um evento ocorre num processo, tendo a timestamp de Lamport igual a 1, e dois eventos ocorrem noutro processo, sendo a timestamp do segundo evento igual a 2. As vector timestamps dos respetivos eventos irão ser (1, 0) e (0, 2), considerando só estes dois processos. Para um vector timestamp ser menor que outro, todos os elementos têm de ser menores ou iguais que os respetivos elementos do outro timestamp, sendo que pelo menos um deles tem de ser estritamente menor. O que não é o caso. Por isso, nesta situação, 1 < 2 verifica-se mas (1, 0) < (0, 2) não se verifica.
+
+1.8-
+Falso.
+Alguns algoritmos de exclusão mútua assumem que o processo que se encontra na zona crítica nunca falha. Tal não pode ser assumido para um algoritmo de eleição de leader: tem de se ter em conta casos em que o líder ou candidato falham. Outra razão é porque num algoritmo de eleição, todos os participantes têm de tomar conhecimento de quem o líder é, o que não acontece nos algoritmos de exclusão mútua.
+
+1.9-
+Falso.
+Se um participante falhar, e o coordenador estiver na fase de WAIT, ou seja, esperando as respostas dos participantes, se não receber a resposta de pelo menos um deles, um timeout irá ocorrer, e a opção de GLOBAL-ABORT irá ser escolhida.
+
+1.10-
+Não demos?
+
+1.11-
+Não demos?
+
+1.12-
+Não demos?
+
+
+2-
+2.1- 
+FLAT VS HIERARCHICAL
+
+Existem dois tipos de nomes, os nomes puros e os não puros. Os nomes puros, ao contrário dos não puros, não implicam nem indicam nenhuma característica adicional do conteúdo/elemento a que estão ligados, como por exemplo localização. Não restringem nem compromentem o serviço a nada, e são apenas úteis para comparação. Uma vantagem deles é que, mesmo que o conteúdo mude de localização, por exemplo, o nome pode continuar o mesmo já que não compromete o elemento de nada, enquanto que um nome impuro poderia ter de ser mudado já que a informação apresentada por este ficaria desatualizada. Uma vantagem sobre nomes impuros é que, por outro, lado, sabemos onde pesquisar se quisermos mais informação sobre o conteúdo. 
+
+2.2-
+Como as chaves são de 5 bits, vai haver um total de 2ˆ5 = 32 chaves/"slots", ou seja os identificadores irão ser numerados de 0 a 31. A finger table de um nó pode ser calculada como succ(n+2^i), para i desde 0 a m, sendo m o número de bits que neste caso é 5. A finger table do nó 20 irá ser [21, 28, 28, 28, 9]. Ao querer encontrar o sucessor de uma key, um nó irá percorrer a finger table de trás para a frente e parar no primeiro nó em que a condição n < ft[i] < k se verifique, sendo que n é o ID do nó, ft[i] é a entrada atual da finger table e k é o ID da key. Como a key que queremos encontrar é 11, então o nó 20 irá contactar o nó 9. O primeiro elemento da finger table do nó 9 irá ser o seu sucessor 18. Irá contactar esse nó, sendo que ele será o sucessor da chave.
+
+
+3-
+3.1-
+O protocolo representado é o protocolo Diffie-Hellman, e é um protocolo de geração e acordo de uma session key, para comunicação com confidencialidade duas entidades, sendo depois possível de ser usada para integridade dos dados se se utilizar a técnica de encrypt-then-mac. n é um número primo grande, g é um número menor que n, e x e y são dois números secretos e grandes. Ao trocar as mensagens indicadas na imagem, cada entidade tem a chance de computar a session key, g^(xy) mod n. Um atacante não pode fazer a mesma coisa pois teria de computar o logaritmo discreto, que não é uma operação tratável computacionalmente para a maior parte dos casos.
+
+3.2-
+Não. O protocolo da figura apenas garante, através do uso da session key, a confidencialidade dos dados. De modo a garantir as outras duas características, autenticação e integridade, teriam de ser feitas mais algumas operações. Para autenticação, poderia-se utilizar uma variante do algoritmo de Diffie-Hellman denominado DH autenticado, em que as mensagens são encriptadas com uma chave partilhada ou com uma chave pública. Estas chaves teriam de ser geradas ou obtidas previamente pelas duas entidades, por exemplo executando um protocolo de autenticação como o Needham-Schroeder. Para integridade é necessário utilizar, para além de encriptação das mensagens com a session key gerada, o uso de uma função de hashing com uma key (preferencialmente outra key que não a session key), de modo a ser possível verificar se os dados foram modificados durante o envio/receção da mensagem.
+
+3.3-
+TLS_DHE_...
+É a única cypher suite que utiliza Diffie-Hellman com autenticação.
+
+4-
+4.1-
+Paxos é uma implementação do algoritmo de Synod, cujo objetivo é o consenso entre as várias entidades de um sistema distribuido. SMR é uma arquitetura que consiste na criação de uma máquina de estados determinística, que é reproduzida em todas as entidades do sistema distribuído, sendo que o objetivo é fazer a mesma sequência de operações para cada processo; deste modo as mesmas operações irão fazer com que a máquina de estados em cada entidade sofram as mesmas ações e as mesmas mudanças de estados. A ideia é correr uma instância de Paxos para cada comando que queremos executar, sendo que a instância i serve para decidir qual o i-ésimo comando a executar. Um leader é escolhido, e executa a fase 1 do Paxos para todas as instâncias para as quais não sabemos o comando a executar (isto pode ser feito numa mensagem simples). Os acceptors respondem numa mensagem com todos os accepted proposals das instâncias representadas na request.
+
+4.2-
+Na ausência de falhas, incluíndo a falha do líder, o custo de escolher e executar um comando é igual ao custo da fase 2 do Paxos, que é provado que é ótimo.
+
+
+

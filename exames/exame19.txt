@@ -1,0 +1,66 @@
+------------
+1ª parte
+------------
+1- Yes.
+2- Não sai.
+3- Não sai.
+4- Yes.
+5- No.
+6- Yes.
+7- Protocol stateless, server stateful.
+8- No.
+9- Conf.
+10- Yes.
+11- Não sai.
+
+
+
+------------
+2ª parte
+------------
+
+1-
+1.1- Õ = ((T4 - T3) + (T1-T2)) / 2
+       = ((1256 - 1264) + (1250 - 1254)) / 2
+       = (-8 -4) / 2
+       = -12 / 2
+       = -6
+
+1.2- 
+
+
+2- Verdadeiro, no invitation algorithm, ao contrário do bully algorithm em que um nó se impõe como líder, todos os nós começam líderes do seu próprio grupo singleton, sendo que depois alguns líderes convidam outros líderes (e os elementos do seu grupo) a juntarem-se ao seu grupo. Ao longo da execução do algoritmo, irá haver vários líderes, um para cada grupo existente.
+
+3- Falso. O algoritmo lida com perda de mensagens ou mensagens que não são entregues dentro de um determinado período de tempo com o uso de timeouts. (talvez seja V -> A8).
+
+4- ???
+
+5- Verdadeiro. Quem irá ter a key são apenas as duas entidades que executaram o protocolo, logo é possível proceder a uma autenticação utilizando aquela key.
+
+6- Falso. HMAC já garante a autenticação e integridade na comunicação.
+
+7- Verdadeiro. O protocolo 2PC depende de recuperação local, sendo que antes de enviar as mensagens os participantes devem escrever em disco.
+
+8- Verdadeiro. Se um canal entre dois elementos do sistema falhar, não sendo possível a comunicação um com o outro, provavelmente irá ocorrer uma ação de timeout.
+
+9- Verdadeiro. Um truststore serve para armazenar chaves e/ou certificados usados para autenticar entidades remotas. Pode ou não requerir uma password para ser possível ler as informações presentes no ficheiro.
+
+10- No caderno.
+
+11- Verdadeiro. 
+
+12- Replay attack
+
+13- a)
+
+14- Falso. Se TCP oferece funcionalidades que a aplicação não necessita, sendo que pode trazer consequências e desvantagens à performance da aplicação, deve-se usar UDP e implementar as funcionalidades extra numa camada superior.
+
+15- Falso. Deve manter para cada um dos subdomains diretos, e zonas não são necessariamente subdomains.
+
+16- Falso. De modo a arranjar uma solução escalável, é necessário utilizar application-level multicasting, utilizando uma overlay network em que se pode construír uma spanning tree ou utilizar algoritmos de epidemia.
+
+17- Verdadeiro. É uma das especificações/assunções do algoritmo bully de Garcia-Molina. Se por exemplo, uma mensagem NEW-LEADER chegasse antes da mensagem HALT, o algoritmo não iria funcionar.
+
+18- Verdadeiro. Chord usa um "domínio" de valores de 0 a 2^(m-1), sendo m o número de bits desejado. Normalmente utiliza-se uma função de hashing para gerar um identificador de m bits, tanto para as keys dos elementos que queremos guardar, tanto para identificar os nós do sistema.
+
+19- Falso. Mesmo que não seja possível fazer a leader election corretamente, e múltiplos servers pensam que são líderes, o sistema nunca irá chegar a um consenso e dois servidores nunca irão escolher comandos diferentes para executar, mantendo a safety.

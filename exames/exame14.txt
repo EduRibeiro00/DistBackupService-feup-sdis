@@ -1,0 +1,60 @@
+1-
+a)
+Falso.
+UDP é um protocolo de transporte que não requer conexão prévia das entidades que comunicam entre si, e não garante o tratamento de erros como a perda ou duplicação de pacotes.
+
+b)
+Falso.
+IP Multicast não utiliza TCP, usa UDP.
+
+c)
+Falso.
+RPCs foram criados para facilitar a comunicação entre processos com sistemas diferentes.
+
+d)
+Verdadeiro.
+DNS funciona de uma maneira hierárquica, sendo que cada servidor tem informação (entradas NS e A) sobre todos os seus subdomínios diretos. Deste modo, se o servidor não consegue satisfazer diretamente o pedido de um cliente, irá enviar ao mesmo a identificação do seu subdomínio que pertence ao nome enviado no pedido, de modo ao cliente poder contactá-lo.
+
+e) ???
+
+f) Não demos.
+
+g) Verdadeiro.
+
+h) Não demos.
+
+
+2-
+1) Não. Nada garante que a mensagem não é antiga, pois o servidor não tem conhecimento das nonces previamente utilizadas (ele não recebe a nonce do A).
+
+2) Sim, devido ao uso do nonce Ra.
+
+3) Sim, devido ao uso do nonce Rb.
+
+4) Não, se B' intersetar a primeira mensagem, o B' poderá mandar a mensagem ao S de modo a conectar-se com o A.
+	A não sabe se B recebeu a mensagem.
+
+5) Sim, como o B conecta-se diretamente com o S sabe que está a pedir uma ligação com o A.
+   Não, B não sabe se A recebeu a mensagem.
+
+6) Sim, pois o valor está encriptado com Kas e Kbs, keys que só o A, B e S possuem.
+
+
+3-
+1) Uma mensagem viajando da fonte até ao destinatário demora tempo. De modo a compensar por esse delay, ao tempo na mensagem enviada deve ser adicionado um delay para compensar. São usadas duas mensagens para calcular o round trip delay.
+
+2) At-most-once messaging, de modo a saber quais são as mensagens que já foram processadas.
+
+4-
+1) Só descrever.
+
+2) Acho que sim, os participantes perguntam uns aos outros e todos querem dar COMMIT pq estao em READY.
+
+5-
+1) Descrever.
+
+2) Sabes que os estados das réplicas ficam bem se c/ bloqueio.
+   S/ bloqueio, a performance é melhor porque não fica a espera.
+   Consistency vs performance.
+
+3) Não.

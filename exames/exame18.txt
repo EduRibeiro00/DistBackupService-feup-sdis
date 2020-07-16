@@ -1,0 +1,51 @@
+1- All statements are true.
+
+2- Public-key certificates rely on the knowledge of the public-key of certificate authorities.
+
+3- False.
+
+4- False.
+
+5- False.
+
+6- Key resolution requires O(m) steps (it actually requires O(log(m)).
+
+7- False.
+
+8- True.
+
+9- We can use sync clocks instead of Lamport clocks for timestamp.
+
+10- False.
+
+11- 
+1) The shown security protocol gives a session key to two entities that wish to communicate with one other. That is done using a known, general entity called the KDC. Each entity shares an encryption key with the KDC, so the only entity that can read KDC messages is the entity to which the KDC message was destined to. The entities communicate with the KDC and it gives the session key to both computers/entities, Alice and Bob. In the first message, Alice starts communication with the KDC, telling it that it is Alice, and that she wishes to communicate with Bob. The KDC then generates Ka,b, the session key for the communication between Alice and Bob, and sends the key to both of them, in two messages. Each message is encrypted with the respective KDC shared key.
+
+2) Não sei.
+
+3) No, it is not. It can happen that Bob receives an encrypted message from Alice before it receives the session key from the KDC, therefore not knowing how to decode Alice's message. A protocol that can be used to ensure a secure communication between two entities is the Needham-Schroeder protocol.
+
+
+12- ??
+
+13- False.
+
+14- In the absence of faults, the switch-sibling protocol does not allow the level of a node to decrease.
+
+15- True.
+
+16- Acho que não demos.
+
+17- True.
+
+18- False.
+
+19- All statements are true.
+
+20- b).
+
+21- 
+
+
+
+22- All statements are false. / RPC systems that... (n sei)
